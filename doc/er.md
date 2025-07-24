@@ -9,8 +9,6 @@ categories {
     String name "カテゴリ名"
     String user_id "Firebase uid"
     Boolean deleted "論理削除フラグ"
-    LocalDateTime  created_at "作成日時"
-    LocalDateTime updated_at "更新日時"
 }
 
 items {
@@ -18,7 +16,6 @@ items {
     String name "アイテム名"
     Integer quantity "在庫数"
     Integer category_id FK "カテゴリID"
-    String user_id "Firebase uid"
     Boolean deleted "論理削除フラグ"
     LocalDateTime created_at "作成日時"
     LocalDateTime updated_at "更新日時"
