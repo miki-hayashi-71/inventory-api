@@ -6,17 +6,17 @@ erDiagram
 
 categories {
     Integer id PK "カテゴリID"
-    String name "カテゴリ名"
     String user_id "Firebase uid"
+    String name "カテゴリ名"
     Boolean deleted "論理削除フラグ"
 }
 
 items {
     Integer id PK "アイテムID(主キー)"
-    String name "アイテム名"
-    Integer quantity "在庫数"
     Integer category_id FK "カテゴリID"
     Integer user_id "Firebase uid"
+    String name "アイテム名"
+    Integer quantity "在庫数"
     Boolean deleted "論理削除フラグ"
     LocalDateTime created_at "作成日時"
     LocalDateTime updated_at "更新日時"
