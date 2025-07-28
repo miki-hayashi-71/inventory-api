@@ -14,7 +14,7 @@ categories {
 items {
     Integer id PK "アイテムID(主キー)"
     Integer category_id FK "カテゴリID"
-    Integer user_id "Firebase uid"
+    String user_id "Firebase uid"
     String name "アイテム名"
     Integer quantity "在庫数"
     Integer price "購入価格"
