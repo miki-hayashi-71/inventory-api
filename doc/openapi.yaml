@@ -1,0 +1,424 @@
+# OpenAPI Specificationのバージョン
+openapi: 3.0.3
+
+# APIの基本情報
+info:
+  title: "アイテム管理API"
+  description: |-
+    - 自宅の消耗品の在庫を管理するためのAPI。
+    - ユーザーはカテゴリやアイテムを登録し、在庫を管理できる。
+    - 認証にはFirebase AuthenticationのIDトークンが必要。
+  version: "1.0.0"
+
+# APIサーバーの情報
+servers:
+  - url: http://localhost:8080
+
+# APIのタグ（グループ化）
+tags:
+  - name: Category
+    description: カテゴリ管理機能
+  - name: Item
+    description: アイテム管理機能
+
+# API全体に適用するセキュリティ設定
+security:
+  - FirebaseBearerAuth: []
+
+# パスとエンドポイントの定義
+paths:
+  #----------------------------------
+  # カテゴリ関連
+  #----------------------------------
+  /categories:
+    get:
+      tags:
+        - Category
+      summary: カテゴリ一覧を取得
+      description: |-
+        認証済みユーザーが作成したカテゴリの一覧を取得する
+        - deletedフラグがfalseのレコードのみが対象
+        - 更新日が新しい順にソート
+      responses:
+        "200":
+          description: カテゴリ一覧の取得に成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CategoryResponse'
+        "401":
+          $ref: '#/components/responses/UnauthorizedResponse'
+    post:
+      tags:
+        - Category
+      summary: カテゴリ新規作成
+      description: |-
+        新しいカテゴリを1件作成する
+        - カテゴリ名は必須
+        - ログインユーザーに紐づくカテゴリ内に、同じ名前のカテゴリは作成できない
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryCreateRequest'
+      responses:
+        "201":
+          description: カテゴリの作成に成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryResponse'
+        "400":
+          $ref: '#/components/responses/BadRequestResponse'
+        "401":
+          $ref: '#/components/responses/UnauthorizedResponse'
+
+  /categories/{categoryId}:
+    parameters:
+      - name: categoryId
+        in: path
+        required: true
+        description: 操作対象のカテゴリID
+        schema:
+          type: integer
+    patch:
+      tags:
+        - Category
+      summary: カテゴリ編集
+      description: |-
+        指定されたIDのカテゴリ名を編集する
+        - 編集対象はログインユーザーが作成したカテゴリのみ
+        - カテゴリ名は必須
+        - ログインユーザーに紐づくカテゴリ内に、同じ名前のカテゴリは複数登録できない
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryUpdateRequest'
+      responses:
+        "200":
+          description: カテゴリの編集に成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryResponse'
+        "400":
+          $ref: '#/components/responses/BadRequestResponse'
+        "401":
+          $ref: '#/components/responses/UnauthorizedResponse'
+        "403":
+          $ref: '#/components/responses/ForbiddenResponse'
+        "404":
+          $ref: '#/components/responses/NotFoundResponse'
+    delete:
+      tags:
+        - Category
+      summary: カテゴリ削除 (論理削除)
+      description: |-
+        指定されたIDのカテゴリを論理削除する
+        - 削除対象はログインユーザーが作成したカテゴリのみ
+        - 削除したカテゴリに紐づくアイテムも合わせて論理削除される
+      responses:
+        "204":
+          description: カテゴリの削除に成功
+        "401":
+          $ref: '#/components/responses/UnauthorizedResponse'
+        "403":
+          $ref: '#/components/responses/ForbiddenResponse'
+        "404":
+          $ref: '#/components/responses/NotFoundResponse'
+
+  #----------------------------------
+  # アイテム関連
+  #----------------------------------
+  /items:
+    get:
+      tags:
+        - Item
+      summary: アイテム一覧を取得
+      description: |-
+        指定したカテゴリに属するアイテムの一覧を取得する
+        - ログインユーザーが作成したデータのみ取得
+        - deletedフラグがfalseのレコードのみを対象とする
+        - 更新日が新しい順にソート
+      parameters:
+        - name: categoryId
+          in: query
+          required: true
+          description: アイテムを取得したいカテゴリのID
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: アイテム一覧の取得に成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ItemResponse'
+        "400":
+          $ref: '#/components/responses/BadRequestResponse'
+        "401":
+          $ref: '#/components/responses/UnauthorizedResponse'
+        "404":
+          $ref: '#/components/responses/NotFoundResponse'
+    post:
+      tags:
+        - Item
+      summary: アイテム新規作成
+      description: |-
+        新しいアイテムを1件、指定したカテゴリに紐づけて作成
+        - アイテム名は必須
+        - 数量(quantity)を指定しない場合はデフォルトで0が設定される
+        - ログインユーザーが作成したカテゴリにのみ追加可能
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ItemCreateRequest'
+      responses:
+        "201":
+          description: アイテムの作成に成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemResponse'
+        "400":
+          $ref: '#/components/responses/BadRequestResponse'
+        "401":
+          $ref: '#/components/responses/UnauthorizedResponse'
+        "404":
+          $ref: '#/components/responses/NotFoundResponse'
+
+  /items/{itemId}:
+    parameters:
+      - name: itemId
+        in: path
+        required: true
+        description: 操作対象のアイテムID
+        schema:
+          type: integer
+    patch:
+      tags:
+        - Item
+      summary: アイテム情報の更新
+      description: |-
+        指定されたIDのアイテム情報（名前、在庫数）を更新する
+        - 編集対象はログインユーザーが作成したアイテムのみ
+        - アイテム名は必須
+        - 数量は0以上の整数
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ItemUpdateRequest'
+      responses:
+        "200":
+          description: アイテムの更新に成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemResponse'
+        "400":
+          $ref: '#/components/responses/BadRequestResponse'
+        "401":
+          $ref: '#/components/responses/UnauthorizedResponse'
+        "403":
+          $ref: '#/components/responses/ForbiddenResponse'
+        "404":
+          $ref: '#/components/responses/NotFoundResponse'
+    delete:
+      tags:
+        - Item
+      summary: アイテム削除 (論理削除)
+      description: |-
+        指定されたIDのアイテムを論理削除する
+        - 削除対象はログインユーザーが作成したアイテムのみ
+      responses:
+        "204":
+          description: アイテムの削除に成功
+        "401":
+          $ref: '#/components/responses/UnauthorizedResponse'
+        "403":
+          $ref: '#/components/responses/ForbiddenResponse'
+        "404":
+          $ref: '#/components/responses/NotFoundResponse'
+
+# 再利用可能なコンポーネントの定義
+components:
+  # セキュリティスキーマの定義 (Firebase認証)
+  securitySchemes:
+    FirebaseBearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: "Firebase Authenticationで発行されたIDトークンをBearerトークンとして指定してください。"
+
+  # データスキーマ (リクエスト/レスポンスのモデル)
+  schemas:
+    # Category Schemas
+    CategoryResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: カテゴリID
+          example: 1
+        name:
+          type: string
+          description: カテゴリ名
+          example: "キッチン"
+        createdAt:
+          type: string
+          format: date-time
+          description: 作成日時
+        updatedAt:
+          type: string
+          format: date-time
+          description: 更新日時
+    CategoryCreateRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: 新規作成するカテゴリ名
+          example: "洗濯"
+    CategoryUpdateRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: 更新後のカテゴリ名
+          example: "トイレ"
+
+    # Item Schemas
+    ItemResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: アイテムID
+          example: 101
+        name:
+          type: string
+          description: アイテム名
+          example: "ティッシュペーパー"
+        quantity:
+          type: integer
+          description: 在庫数
+          example: 6
+        categoryId:
+          type: integer
+          description: 紐づくカテゴリのID
+          example: 1
+        createdAt:
+          type: string
+          format: date-time
+          description: 作成日時
+        updatedAt:
+          type: string
+          format: date-time
+          description: 更新日時
+    ItemCreateRequest:
+      type: object
+      required:
+        - name
+        - categoryId
+      properties:
+        name:
+          type: string
+          description: 新規作成するアイテム名
+          example: "トイレットペーパー"
+        quantity:
+          type: integer
+          description: 在庫数 (指定しない場合は0)
+          default: 0
+          example: 12
+        categoryId:
+          type: integer
+          description: 紐付けるカテゴリのID
+          example: 1
+    ItemUpdateRequest:
+      type: object
+      required:
+        - name
+        - quantity
+      properties:
+        name:
+          type: string
+          description: 更新後のアイテム名
+          example: "キッチンペーパー"
+        quantity:
+          type: integer
+          description: 更新後の在庫数 (0以上の整数)
+          minimum: 0
+          example: 5
+
+  # 共通のレスポンス定義
+  responses:
+    BadRequestResponse:
+      description: 不正なリクエストです
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              isSuccess:
+                type: boolean
+                example: false
+              message:
+                type: string
+                example: 不正なリクエストです
+
+    UnauthorizedResponse:
+      description: 認証が必要です
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              isSuccess:
+                type: boolean
+                example: false
+              message:
+                type: string
+                example: 認証が必要です
+
+    ForbiddenResponse:
+      description: 権限がありません
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              isSuccess:
+                type: boolean
+                example: false
+              message:
+                type: string
+                example: 権限がありません
+
+    NotFoundResponse:
+      description: 該当リソースが存在しません
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              isSuccess:
+                type: boolean
+                example: false
+              message:
+                type: string
+                example: 該当リソースが存在しません
