@@ -5,9 +5,9 @@ openapi: 3.0.3
 info:
   title: "アイテム管理API"
   description: |-
-    - 自宅の消耗品の在庫を管理するためのAPI。
-    - ユーザーはカテゴリやアイテムを登録し、在庫を管理できる。
-    - 認証にはFirebase AuthenticationのIDトークンが必要。
+    自宅にある消耗品の在庫を、カテゴリ別に一元管理する機能を提供します。
+    - **データモデル**: 全ユーザー共通の「デフォルトカテゴリ」と、ユーザーが個別に作成する「カスタムカテゴリ」「アイテム」で構成されます。
+    - **認証**: 全てのエンドポイントFirebase AuthenticationのIDトークンが必要です。
   version: "1.0.0"
 
 # APIサーバーの情報
@@ -36,12 +36,12 @@ paths:
         - Category
       summary: カテゴリ一覧を取得
       description: |-
-        認証済みユーザーが作成したカテゴリの一覧を取得する
+        デフォルトカテゴリと、ログインユーザーが作成したカスタムカテゴリを合算した一覧を取得する。
         - deletedフラグがfalseのレコードのみが対象
-        - 更新日が新しい順にソート
+        - 辞書順にソートして表示する
       responses:
         "200":
-          description: カテゴリ一覧の取得に成功
+          description: カテゴリ一覧の取得に成功しました
           content:
             application/json:
               schema:
@@ -50,14 +50,19 @@ paths:
                   $ref: '#/components/schemas/CategoryResponse'
         "401":
           $ref: '#/components/responses/UnauthorizedResponse'
+        "500":
+          $ref: '#/components/responses/InternalServerError'
+
     post:
       tags:
         - Category
-      summary: カテゴリ新規作成
+      summary: カスタムカテゴリを新規作成
       description: |-
         新しいカテゴリを1件作成する
         - カテゴリ名は必須
-        - ログインユーザーに紐づくカテゴリ内に、同じ名前のカテゴリは作成できない
+        - カテゴリ名は50文字以内
+        - デフォルトカテゴリ及びログインユーザーのカスタムカテゴリ内で、カテゴリ名が重複しない
+        - ユーザーが作成できるカスタムカテゴリは50件まで
       requestBody:
         required: true
         content:
@@ -66,15 +71,49 @@ paths:
               $ref: '#/components/schemas/CategoryCreateRequest'
       responses:
         "201":
-          description: カテゴリの作成に成功
+          description: カテゴリの作成が完了しました
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/CategoryResponse'
         "400":
-          $ref: '#/components/responses/BadRequestResponse'
+          description: 不正なリクエストです
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                name_required:
+                  summary: (*1) カテゴリ名が空
+                  value:
+                    code: "CATEGORY_NAME_REQUIRED"
+                    message: "カテゴリ名は必須です"
+                name_too_long:
+                  summary: (*2) カテゴリ名が50文字超過
+                  value:
+                    code: "CATEGORY_NAME_TOO_LONG"
+                    message: "カテゴリ名は50文字以内で入力してください"
         "401":
           $ref: '#/components/responses/UnauthorizedResponse'
+        "409":
+          description: リソースが競合しています
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                name_duplicate:
+                  summary: (*3) カテゴリ名が重複
+                  value:
+                    code: "CATEGORY_NAME_DUPLICATE"
+                    message: "そのカテゴリ名は既に使用されています"
+                limit_exceeded:
+                  summary: (*4) カテゴリ登録上限
+                  value:
+                    code: "CATEGORY_LIMIT_EXCEEDED"
+                    message: "登録できるカテゴリの上限に達しています"
+        "500":
+          $ref: '#/components/responses/InternalServerError'
 
   /categories/{categoryId}:
     parameters:
@@ -87,12 +126,13 @@ paths:
     patch:
       tags:
         - Category
-      summary: カテゴリ編集
+      summary: カスタムカテゴリの編集
       description: |-
         指定されたIDのカテゴリ名を編集する
-        - 編集対象はログインユーザーが作成したカテゴリのみ
+        - 編集対象はログインユーザーが作成したカスタムカテゴリのみ
         - カテゴリ名は必須
-        - ログインユーザーに紐づくカテゴリ内に、同じ名前のカテゴリは複数登録できない
+        - カテゴリ名は50文字以内
+        - デフォルトカテゴリ及びログインユーザーのカスタムカテゴリ内で、カテゴリ名が重複しない
       requestBody:
         required: true
         content:
@@ -101,36 +141,95 @@ paths:
               $ref: '#/components/schemas/CategoryUpdateRequest'
       responses:
         "200":
-          description: カテゴリの編集に成功
+          description: カスタムカテゴリの更新が完了しました
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/CategoryResponse'
         "400":
-          $ref: '#/components/responses/BadRequestResponse'
+          description: 不正なリクエストです
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                name_required:
+                  summary: (*2) カテゴリ名が空
+                  value:
+                    code: "CATEGORY_NAME_REQUIRED"
+                    message: "カテゴリ名は必須です"
+                name_too_long:
+                  summary: (*3) カテゴリ名が50文字超過
+                  value:
+                    code: "CATEGORY_NAME_TOO_LONG"
+                    message: "カテゴリ名は50文字以内で入力してください"
         "401":
           $ref: '#/components/responses/UnauthorizedResponse'
         "403":
-          $ref: '#/components/responses/ForbiddenResponse'
+          description: 権限がありません
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                code: "DEFAULT_CATEGORY_IMMUTABLE"
+                message: "デフォルトカテゴリは編集できません"
         "404":
           $ref: '#/components/responses/NotFoundResponse'
+        "409":
+          description: リソースが競合しています
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                code: "CATEGORY_NAME_DUPLICATE"
+                message: "そのカテゴリ名は既に使用されています"
+        "500":
+          $ref: '#/components/responses/InternalServerError'
     delete:
       tags:
         - Category
-      summary: カテゴリ削除 (論理削除)
+      summary: カスタムカテゴリの削除 (論理削除)
       description: |-
-        指定されたIDのカテゴリを論理削除する
+        指定されたIDのカスタムカテゴリを論理削除する
         - 削除対象はログインユーザーが作成したカテゴリのみ
-        - 削除したカテゴリに紐づくアイテムも合わせて論理削除される
+        - カテゴリに紐づくアイテムが存在しないこと
       responses:
-        "204":
-          description: カテゴリの削除に成功
+        "200":
+          description: カテゴリの論理削除に成功しました
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryResponse'
+              example:
+                id: 1
+                name: "削除されたカテゴリ"
+                deleted: true
         "401":
           $ref: '#/components/responses/UnauthorizedResponse'
         "403":
-          $ref: '#/components/responses/ForbiddenResponse'
+          description: 権限がありません
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                code: "DEFAULT_CATEGORY_IMMUTABLE"
+                message: "デフォルトカテゴリは削除できません"
         "404":
           $ref: '#/components/responses/NotFoundResponse'
+        "409":
+          description: リソースが競合しています
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                code: "CATEGORY_NOT_EMPTY"
+                message: "アイテムが1件以上登録されているカテゴリは削除できません"
+        "500":
+          $ref: '#/components/responses/InternalServerError'
 
   #----------------------------------
   # アイテム関連
@@ -142,9 +241,10 @@ paths:
       summary: アイテム一覧を取得
       description: |-
         指定したカテゴリに属するアイテムの一覧を取得する
-        - ログインユーザーが作成したデータのみ取得
-        - deletedフラグがfalseのレコードのみを対象とする
-        - 更新日が新しい順にソート
+        - カテゴリIDに紐づくアイテムを取得
+        - ログインユーザーが作成したデータを取得
+        - deletedフラグがfalseのレコードのみが対象
+        - 更新日が新しい順にソートして表示する
       parameters:
         - name: categoryId
           in: query
@@ -154,27 +254,37 @@ paths:
             type: integer
       responses:
         "200":
-          description: アイテム一覧の取得に成功
+          description: アイテム一覧の取得に成功しました
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/ItemResponse'
-        "400":
-          $ref: '#/components/responses/BadRequestResponse'
         "401":
           $ref: '#/components/responses/UnauthorizedResponse'
         "404":
-          $ref: '#/components/responses/NotFoundResponse'
+          description: 指定されたカテゴリが見つかりません
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                code: "CATEGORY_NOT_FOUND"
+                message: "指定されたカテゴリが見つかりません"
+        "500":
+          $ref: '#/components/responses/InternalServerError'
     post:
       tags:
         - Item
-      summary: アイテム新規作成
+      summary: アイテムを新規作成
       description: |-
         新しいアイテムを1件、指定したカテゴリに紐づけて作成
-        - アイテム名は必須
+        - アイテム名、カテゴリは必須
+        - アイテム名は50文字以内
         - 数量(quantity)を指定しない場合はデフォルトで0が設定される
+        - 数量は0以上の整数
+        - 同一カテゴリ内に同じアイテム名は登録できない
         - ログインユーザーが作成したカテゴリにのみ追加可能
       requestBody:
         required: true
@@ -184,17 +294,55 @@ paths:
               $ref: '#/components/schemas/ItemCreateRequest'
       responses:
         "201":
-          description: アイテムの作成に成功
+          description: アイテムの作成に成功しました
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ItemResponse'
         "400":
-          $ref: '#/components/responses/BadRequestResponse'
+          description: 不正なリクエストです
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                required_fields:
+                  summary: (*1) 必須項目が不足
+                  value:
+                    code: "ITEM_FIELDS_REQUIRED"
+                    message: "アイテム名とカテゴリは必須です"
+                name_too_long:
+                  summary: (*2) アイテム名が50文字超過
+                  value:
+                    code: "ITEM_NAME_TOO_LONG"
+                    message: "アイテム名は50文字以内で入力してください"
+                invalid_quantity:
+                  summary: (*4) 数量が不正
+                  value:
+                    code: "INVALID_ITEM_QUANTITY"
+                    message: "数量は0以上の整数で入力してください"
         "401":
           $ref: '#/components/responses/UnauthorizedResponse'
         "404":
-          $ref: '#/components/responses/NotFoundResponse'
+          description: 指定されたカテゴリが見つかりません
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                code: "CATEGORY_NOT_FOUND"
+                message: "指定されたカテゴリが見つかりません"
+        "409":
+          description: リソースが競合しています
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                code: "ITEM_NAME_DUPLICATE"
+                message: "そのアイテム名は既に登録されています"
+        "500":
+          $ref: '#/components/responses/InternalServerError'
 
   /items/{itemId}:
     parameters:
@@ -207,12 +355,14 @@ paths:
     patch:
       tags:
         - Item
-      summary: アイテム情報の更新
+      summary: アイテムの編集
       description: |-
         指定されたIDのアイテム情報（名前、在庫数）を更新する
         - 編集対象はログインユーザーが作成したアイテムのみ
         - アイテム名は必須
+        - アイテム名は50文字以内
         - 数量は0以上の整数
+        - 同一カテゴリ内に同じアイテム名は登録できない
       requestBody:
         required: true
         content:
@@ -221,35 +371,78 @@ paths:
               $ref: '#/components/schemas/ItemUpdateRequest'
       responses:
         "200":
-          description: アイテムの更新に成功
+          description: アイテムの編集に成功しました
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ItemResponse'
         "400":
-          $ref: '#/components/responses/BadRequestResponse'
+          description: 不正なリクエストです
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                name_required:
+                  summary: (*1) アイテム名が空
+                  value:
+                    code: "ITEM_NAME_REQUIRED"
+                    message: "アイテム名は必須です"
+                name_too_long:
+                  summary: (*2) アイテム名が50文字超過
+                  value:
+                    code: "ITEM_NAME_TOO_LONG"
+                    message: "アイテム名は50文字以内で入力してください"
+                invalid_quantity:
+                  summary: (*4) 数量が不正
+                  value:
+                    code: "INVALID_ITEM_QUANTITY"
+                    message: "数量は0以上の整数で入力してください"
         "401":
           $ref: '#/components/responses/UnauthorizedResponse'
         "403":
           $ref: '#/components/responses/ForbiddenResponse'
         "404":
           $ref: '#/components/responses/NotFoundResponse'
+        "409":
+          description: リソースが競合しています
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                code: "ITEM_NAME_DUPLICATE"
+                message: "そのアイテム名は既に登録されています"
+        "500":
+          $ref: '#/components/responses/InternalServerError'
     delete:
       tags:
         - Item
-      summary: アイテム削除 (論理削除)
+      summary: アイテムの削除 (論理削除)
       description: |-
         指定されたIDのアイテムを論理削除する
         - 削除対象はログインユーザーが作成したアイテムのみ
       responses:
-        "204":
-          description: アイテムの削除に成功
+        "200":
+          description: アイテムの論理削除に成功しました
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemResponse'
+              example:
+                id: 101
+                categoryId: 1
+                name: "削除されたアイテム"
+                quantity: 0
+                deleted: true
         "401":
           $ref: '#/components/responses/UnauthorizedResponse'
         "403":
           $ref: '#/components/responses/ForbiddenResponse'
         "404":
           $ref: '#/components/responses/NotFoundResponse'
+        "500":
+          $ref: '#/components/responses/InternalServerError'
 
 # 再利用可能なコンポーネントの定義
 components:
@@ -259,7 +452,9 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: "Firebase Authenticationで発行されたIDトークンをBearerトークンとして指定してください。"
+      description: |-
+        Firebase Authenticationで発行されたIDトークンをBearerトークンとして指定してください。
+        サーバーサイドでは、Spring SecurityとFirebase Admin SDKを利用してトークンの検証を行います。
 
   # データスキーマ (リクエスト/レスポンスのモデル)
   schemas:
@@ -274,15 +469,7 @@ components:
         name:
           type: string
           description: カテゴリ名
-          example: "キッチン"
-        createdAt:
-          type: string
-          format: date-time
-          description: 作成日時
-        updatedAt:
-          type: string
-          format: date-time
-          description: 更新日時
+          example: キッチン
     CategoryCreateRequest:
       type: object
       required:
@@ -291,7 +478,7 @@ components:
         name:
           type: string
           description: 新規作成するカテゴリ名
-          example: "洗濯"
+          example: 洗濯
     CategoryUpdateRequest:
       type: object
       required:
@@ -300,7 +487,11 @@ components:
         name:
           type: string
           description: 更新後のカテゴリ名
-          example: "トイレ"
+          example: トイレ
+        deleted:
+          type: boolean
+          description: 論理削除フラグ
+          example: false
 
     # Item Schemas
     ItemResponse:
@@ -310,45 +501,58 @@ components:
           type: integer
           description: アイテムID
           example: 101
-        name:
-          type: string
-          description: アイテム名
-          example: "ティッシュペーパー"
-        quantity:
-          type: integer
-          description: 在庫数
-          example: 6
         categoryId:
           type: integer
           description: 紐づくカテゴリのID
           example: 1
-        createdAt:
+        name:
           type: string
-          format: date-time
-          description: 作成日時
-        updatedAt:
+          description: アイテム名
+          example: ティッシュペーパー
+        quantity:
+          type: integer
+          description: 在庫数
+          example: string
+        price:
           type: string
-          format: date-time
-          description: 更新日時
+          description: 購入価格
+          example: 500
+        place:
+          type: string
+          description: 購入場所
+          example: ABCドラッグストア
+        deleted:
+          type: boolean
+          description: 論理削除フラグ
+          example: false
+
     ItemCreateRequest:
       type: object
       required:
         - name
         - categoryId
       properties:
+        categoryId:
+          type: integer
+          description: 紐付けるカテゴリのID
+          example: 1
         name:
           type: string
           description: 新規作成するアイテム名
-          example: "トイレットペーパー"
+          example: トイレットペーパー
         quantity:
           type: integer
           description: 在庫数 (指定しない場合は0)
           default: 0
           example: 12
-        categoryId:
-          type: integer
-          description: 紐付けるカテゴリのID
-          example: 1
+        price:
+          type: string
+          description: 購入価格
+          example: 500
+        place:
+          type: string
+          description: 購入場所
+          example: ABCドラッグストア
     ItemUpdateRequest:
       type: object
       required:
@@ -358,67 +562,69 @@ components:
         name:
           type: string
           description: 更新後のアイテム名
-          example: "キッチンペーパー"
+          example: キッチンペーパー
         quantity:
           type: integer
           description: 更新後の在庫数 (0以上の整数)
           minimum: 0
           example: 5
+        price:
+          type: string
+          description: 購入価格
+          example: 500
+        place:
+          type: string
+          description: 購入場所
+          example: ABCドラッグストア
+
+    # Error Schema
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: string
+          description: エラーの種類を示すコード
+          example: "VALIDATION_ERROR"
+        message:
+          type: string
+          description: エラーの詳細メッセージ
+          example: "リクエストに問題があります"
 
   # 共通のレスポンス定義
   responses:
-    BadRequestResponse:
-      description: 不正なリクエストです
-      content:
-        application/json:
-          schema:
-            type: object
-            properties:
-              isSuccess:
-                type: boolean
-                example: false
-              message:
-                type: string
-                example: 不正なリクエストです
-
     UnauthorizedResponse:
       description: 認証が必要です
       content:
         application/json:
           schema:
-            type: object
-            properties:
-              isSuccess:
-                type: boolean
-                example: false
-              message:
-                type: string
-                example: 認証が必要です
-
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: "UNAUTHORIZED_ERROR"
+            message: "認証が必要です"
     ForbiddenResponse:
       description: 権限がありません
       content:
         application/json:
           schema:
-            type: object
-            properties:
-              isSuccess:
-                type: boolean
-                example: false
-              message:
-                type: string
-                example: 権限がありません
-
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: "FORBIDDEN_ERROR"
+            message: "要求された操作を実行する権限がありません"
     NotFoundResponse:
       description: 該当リソースが存在しません
       content:
         application/json:
           schema:
-            type: object
-            properties:
-              isSuccess:
-                type: boolean
-                example: false
-              message:
-                type: string
-                example: 該当リソースが存在しません
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: "NOT_FOUND_ERROR"
+            message: "該当のリソースが見つかりません"
+    InternalServerError:
+      description: サーバー内部で予期せぬエラーが発生しました
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            code: "INTERNAL_SERVER_ERROR"
+            message: "サーバー内部でエラーが発生しました"
