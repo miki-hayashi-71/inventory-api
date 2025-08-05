@@ -93,25 +93,22 @@ paths:
                   value:
                     code: "CATEGORY_NAME_TOO_LONG"
                     message: "カテゴリ名は50文字以内で入力してください"
-        "401":
-          $ref: '#/components/responses/UnauthorizedResponse'
-        "409":
-          description: リソースが競合しています
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              examples:
-                name_duplicate:
-                  summary: (*3) カテゴリ名が重複
-                  value:
-                    code: "CATEGORY_NAME_DUPLICATE"
-                    message: "そのカテゴリ名は既に使用されています"
                 limit_exceeded:
                   summary: (*4) カテゴリ登録上限
                   value:
                     code: "CATEGORY_LIMIT_EXCEEDED"
                     message: "登録できるカテゴリの上限に達しています"
+        "401":
+          $ref: '#/components/responses/UnauthorizedResponse'
+        "409":
+          description: そのカテゴリ名は既に使用されています
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                code: "CATEGORY_NAME_DUPLICATE"
+                message: "そのカテゴリ名は既に使用されています"
         "500":
           $ref: '#/components/responses/InternalServerError'
 
