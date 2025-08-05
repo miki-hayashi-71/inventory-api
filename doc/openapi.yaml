@@ -509,7 +509,7 @@ components:
         quantity:
           type: integer
           description: 在庫数
-          example: string
+          example: 5
         price:
           type: string
           description: 購入価格
