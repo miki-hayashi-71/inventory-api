@@ -193,16 +193,8 @@ paths:
         - 削除対象はログインユーザーが作成したカテゴリのみ
         - カテゴリに紐づくアイテムが存在しないこと
       responses:
-        "200":
-          description: カテゴリの論理削除に成功しました
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CategoryResponse'
-              example:
-                id: 1
-                name: "削除されたカテゴリ"
-                deleted: true
+        "204":
+          description: カテゴリの削除に成功しました
         "401":
           $ref: '#/components/responses/UnauthorizedResponse'
         "403":
@@ -420,18 +412,8 @@ paths:
         指定されたIDのアイテムを論理削除する
         - 削除対象はログインユーザーが作成したアイテムのみ
       responses:
-        "200":
-          description: アイテムの論理削除に成功しました
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ItemResponse'
-              example:
-                id: 101
-                categoryId: 1
-                name: "削除されたアイテム"
-                quantity: 0
-                deleted: true
+        "204":
+          description: アイテムの削除に成功しました
         "401":
           $ref: '#/components/responses/UnauthorizedResponse'
         "403":
@@ -485,10 +467,6 @@ components:
           type: string
           description: 更新後のカテゴリ名
           example: トイレ
-        deleted:
-          type: boolean
-          description: 論理削除フラグ
-          example: false
 
     # Item Schemas
     ItemResponse:
@@ -518,11 +496,6 @@ components:
           type: string
           description: 購入場所
           example: ABCドラッグストア
-        deleted:
-          type: boolean
-          description: 論理削除フラグ
-          example: false
-
     ItemCreateRequest:
       type: object
       required:
