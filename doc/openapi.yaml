@@ -510,7 +510,7 @@ components:
           type: integer
           description: 在庫数
           example: 5
-        price:
+        amount:
           type: string
           description: 購入価格
           example: 500
@@ -542,7 +542,7 @@ components:
           description: 在庫数 (指定しない場合は0)
           default: 0
           example: 12
-        price:
+        amount:
           type: string
           description: 購入価格
           example: 500
@@ -565,7 +565,7 @@ components:
           description: 更新後の在庫数 (0以上の整数)
           minimum: 0
           example: 5
-        price:
+        amount:
           type: string
           description: 購入価格
           example: 500
