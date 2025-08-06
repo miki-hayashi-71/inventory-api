@@ -488,14 +488,6 @@ components:
           type: integer
           description: 在庫数
           example: 5
-        amount:
-          type: integer
-          description: 購入価格
-          example: 500
-        place:
-          type: string
-          description: 購入場所
-          example: ABCドラッグストア
     ItemCreateRequest:
       type: object
       required:
