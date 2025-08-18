@@ -62,7 +62,6 @@ sequenceDiagram
     deactivate バックエンド
 ```
 
-
 ### カテゴリ新規作成
 ```mermaid
 sequenceDiagram
@@ -168,7 +167,6 @@ sequenceDiagram
         バックエンド-->>フロントエンド: 204 No Content
     end
     deactivate バックエンド
-
 ```
 
 ## アイテム管理
@@ -197,7 +195,6 @@ sequenceDiagram
         バックエンド-->>フロントエンド: 200 OK（アイテム一覧）
     end
     deactivate バックエンド
-
 ```
 
 ### アイテム新規作成
@@ -265,8 +262,6 @@ sequenceDiagram
         alt チェック 失敗
             バックエンド-->>フロントエンド: アクセスエラー or<br>バリデーションエラー
         else チェック 成功
-        
-
             バックエンド->>データベース: アイテム情報更新 <br>（DBでアイテム名のユニーク制約もチェック）
             activate データベース
             データベース-->>バックエンド: 更新成功
