@@ -9,7 +9,7 @@ import java.util.List;
 public interface CategoryRepository extends JpaRepository<Category, Integer> {
 
     // デフォルトカテゴリの重複作成を防ぐため、nameとuserIdで一致するものをチェックする。DataInitializerではここが空の場合に処理を進める
-    List<Category> findByNameAndUserId(String name, String userId);
+    List<Category> findByNameAndUserId(String name, String systemUserId);
 
     // カテゴリ名の重複チェックのため
     Optional<Category> findByNameAndUserIdAndDeletedFalse(String name, String userId);

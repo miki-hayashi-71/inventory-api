@@ -22,9 +22,9 @@ public class CategoryController {
     @ResponseStatus(HttpStatus.CREATED)
     public CategoryResponse createCategory(@RequestBody @Validated CategoryCreateRequest request) {
         // TODO: 認証機能実装後、実際のuserIdに置き換える
-        String temporaryUserId = "user1";
+        String currentUserId = "user1";
 
-        Category createdCategory = categoryService.createCategory(request, temporaryUserId);
+        Category createdCategory = categoryService.createCategory(request, currentUserId);
 
         CategoryResponse response = new CategoryResponse();
         response.setId(createdCategory.getId());
