@@ -10,6 +10,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -27,8 +29,11 @@ public class CategoryServiceTest {
     private CategoryRepository categoryRepository;
 
     private final String testUserId = "user1";
-    private final String systemUserId = "system";
+    private final String testSystemUserId = "system";
 
+    /**
+     * POST /categories のテスト
+     */
     @Test
     void createCategory_正常なリクエストの場合_カテゴリが作成される() {
         // Arrange
@@ -37,7 +42,7 @@ public class CategoryServiceTest {
 
         when(categoryRepository.findByNameAndUserIdAndDeletedFalse("新しいカテゴリ", testUserId))
                 .thenReturn(Optional.empty());
-        when(categoryRepository.findByNameAndUserIdAndDeletedFalse("新しいカテゴリ", systemUserId))
+        when(categoryRepository.findByNameAndUserIdAndDeletedFalse("新しいカテゴリ", testSystemUserId))
                 .thenReturn(Optional.empty());
         when(categoryRepository.countByUserIdAndDeletedFalse(testUserId))
                 .thenReturn(10L);
@@ -79,6 +84,28 @@ public class CategoryServiceTest {
         assertThrows(CategoryLimitExceededException.class, () -> {
             categoryService.createCategory(request, testUserId);
         });
+    }
+
+    /**
+     * GET /categories のテスト
+     */
+    @Test
+    void getCategoryList_リポジトリから取得したカテゴリリストを返す() {
+        // Arrange
+        String testUserId = "user1";
+        String testSystemUserId = "system";
+        List<Category> expectedList = List.of(new Category(), new Category());
+
+        when(categoryRepository.findByUserIdAndDeletedFalseOrUserIdAndDeletedFalseOrderByNameAsc(testUserId, testSystemUserId))
+                .thenReturn(expectedList);
+
+        // Act
+        List<Category> result = categoryService.getCategoryList(testUserId);
+
+        // Asssrt
+        assertThat(result).hasSize(2);
+        verify(categoryRepository, times(1))
+                .findByUserIdAndDeletedFalseOrUserIdAndDeletedFalseOrderByNameAsc(testUserId, testSystemUserId);
     }
 }
 
