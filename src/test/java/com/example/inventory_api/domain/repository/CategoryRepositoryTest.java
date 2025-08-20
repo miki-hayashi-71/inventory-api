@@ -93,7 +93,7 @@ public class CategoryRepositoryTest {
      * GET /categories のテスト
      */
     @Test
-    void findByUserIdAndDeletedFalseOrUserIdAndDeletedFalseOrderByNameAsc_カスタムカテゴリとデフォルトカテゴリを併せて名前順に取得する() {
+    void findByUserIdAndDeletedFalseOrUserIdAndDeletedFalse_カスタムカテゴリとデフォルトカテゴリを併せて名前順に取得する() {
         // Arrange
         String testUserId = "user1";
         String testSystemUserId = "system";
@@ -118,7 +118,7 @@ public class CategoryRepositoryTest {
         categoryRepository.save(deletedCategory);
 
         // Act
-        List<Category> result = categoryRepository.findByUserIdAndDeletedFalseOrUserIdAndDeletedFalseOrderByNameAsc(testUserId, testSystemUserId);
+        List<Category> result = categoryRepository.findByUserIdAndDeletedFalseOrUserIdAndDeletedFalse(testUserId, testSystemUserId);
 
         // Assert
         assertThat(result).hasSize(2);
