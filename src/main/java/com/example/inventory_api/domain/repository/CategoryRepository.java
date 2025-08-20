@@ -12,8 +12,14 @@ public interface CategoryRepository extends JpaRepository<Category, Integer> {
     List<Category> findByNameAndUserId(String name, String userId);
 
     // カテゴリ名の重複チェックのため
+    //「nameとuser_idが一致するものかつ削除されていないもの」を取得
     Optional<Category> findByNameAndUserIdAndDeletedFalse(String name, String userId);
 
     // ユーザーが作成できるカテゴリの上限数をチェックする
+    // 「特定のuser_idかつ削除されていないもの」を数える
     long countByUserIdAndDeletedFalse(String userId);
+
+    // ログインユーザーのカスタムカテゴリとデフォルトカテゴリの一覧を取得する
+    // 「(1つめの引数のuser_idかつ削除されていない)または(2つめの引数のuser_idかつ削除されていない)もの」を名前の昇順で取得
+    List<Category> findByUserIdAndDeletedFalseOrUserIdAndDeletedFalseOrderByNameAsc(String userId, String systemUserId);
 }

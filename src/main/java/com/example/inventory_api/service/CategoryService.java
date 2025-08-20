@@ -8,6 +8,8 @@ import com.example.inventory_api.service.exception.CategoryNameDuplicateExceptio
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class CategoryService {
 
@@ -20,6 +22,10 @@ public class CategoryService {
         this.categoryRepository = categoryRepository;
     }
 
+    /**
+     * 新しいカスタムカテゴリを1件登録
+     * POST /categories
+     */
     @Transactional  // このメソッド内の処理をすべて一つのトランザクション（全て成功or全て失敗）として実行
     public Category createCategory(CategoryCreateRequest request, String userId) {
 
@@ -49,5 +55,13 @@ public class CategoryService {
         newCategory.setDeleted(false);
 
         return categoryRepository.save(newCategory);
+    }
+
+    /**
+      カスタムカテゴリの一覧を取得
+      GET /categories
+      */
+    public List<Category> getCategoryList(String userId) {
+        return categoryRepository.findByUserIdAndDeletedFalseOrUserIdAndDeletedFalseOrderByNameAsc(userId, SYSTEM_USER_ID);
     }
 }
