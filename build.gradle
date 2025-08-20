@@ -35,6 +35,9 @@ dependencies {
 	// Spring Boot Starter Validation (リクエストのバリデーションに必要)
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 
+	// ICU4J (高度な日本語ソート用。辞書順に出力)
+	implementation 'com.ibm.icu:icu4j:75.1'
+
 	// Spring Boot標準のテスト機能
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'

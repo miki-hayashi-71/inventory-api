@@ -8,6 +8,9 @@ import com.example.inventory_api.service.exception.CategoryNameDuplicateExceptio
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
+import com.ibm.icu.text.Collator;
+import com.ibm.icu.util.ULocale;
+import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -62,6 +65,15 @@ public class CategoryService {
       GET /categories
       */
     public List<Category> getCategoryList(String userId) {
-        return categoryRepository.findByUserIdAndDeletedFalseOrUserIdAndDeletedFalseOrderByNameAsc(userId, SYSTEM_USER_ID);
+        // DBからカスタムカテゴリとデフォルトカテゴリを取得する
+        List<Category> categories = categoryRepository.findByUserIdAndDeletedFalseOrUserIdAndDeletedFalse(userId, SYSTEM_USER_ID);
+
+        // 日本語の辞書順でソートするためのCollatorを準備
+        Collator collator = Collator.getInstance(ULocale.JAPANESE);
+
+        // 取得したリストをCollatorで並び替え
+        categories.sort(Comparator.comparing(Category::getName, collator));
+
+        return categories;
     }
 }
