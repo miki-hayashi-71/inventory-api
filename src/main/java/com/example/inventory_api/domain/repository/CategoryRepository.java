@@ -16,4 +16,7 @@ public interface CategoryRepository extends JpaRepository<Category, Integer> {
 
     // ユーザーが作成できるカテゴリの上限数をチェックする
     long countByUserIdAndDeletedFalse(String userId);
+
+    // 指定したカテゴリ名が、userIdsのリストに存在するかチェック
+    boolean existsByNameAndUserIdInAndDeletedFalse(String name, List<String> userIds);
 }
