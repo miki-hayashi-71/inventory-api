@@ -86,4 +86,58 @@ public class CategoryRepositoryTest {
         // Assert
         assertThat(count).isEqualTo(2);
     }
+
+    @Test
+    void existsByNameAndUserIdInAndDeletedFalse_指定したユーザーリスト内に未削除のカテゴリが存在する場合_trueを返す() {
+        // Arrange
+        String targetCategoryName = "存在するカテゴリ";
+        String targetUser = "user1";
+        String anotherUser = "user2";
+        String systemUser = "system";
+
+        Category category = new Category();
+        category.setName(targetCategoryName);
+        category.setUserId(targetUser);
+        category.setDeleted(false);
+        categoryRepository.save(category);
+
+        // Act & Assert
+        // 存在するユーザーを含むリストで検索した場合
+        List<String> userListContainingTarget = List.of(targetUser, systemUser);
+        boolean result1 = categoryRepository.existsByNameAndUserIdInAndDeletedFalse(targetCategoryName, userListContainingTarget);
+        assertThat(result1).isTrue();
+
+        // 存在しないユーザーのリストで検索した場合
+        List<String> userListNotContainingTarget = List.of(anotherUser, systemUser);
+        boolean result2 = categoryRepository.existsByNameAndUserIdInAndDeletedFalse(targetCategoryName, userListNotContainingTarget);
+        assertThat(result2).isFalse();
+
+        // 違う名前で検索した場合
+        boolean result3 = categoryRepository.existsByNameAndUserIdInAndDeletedFalse("存在しないカテゴリ", userListContainingTarget);
+        assertThat(result3).isFalse();
+    }
+
+    @Test
+    void existsByNameAndUserIdInAndDeletedFalse_カテゴリは存在するが削除済みの場合_falseを返す() {
+        // Arrange
+        String targetCategoryName = "削除済みカテゴリ";
+        String targetUser = "user1";
+        String systemUser = "system";
+
+        Category category = new Category();
+        category.setName(targetCategoryName);
+        category.setUserId(targetUser);
+        category.setDeleted(true); // 削除済みに設定
+        categoryRepository.save(category);
+
+        // Act
+        List<String> userList = List.of(targetUser, systemUser);
+        boolean result = categoryRepository.existsByNameAndUserIdInAndDeletedFalse(targetCategoryName, userList);
+
+        // Assert
+        assertThat(result).isFalse();
+    }
+
+
+
 }
