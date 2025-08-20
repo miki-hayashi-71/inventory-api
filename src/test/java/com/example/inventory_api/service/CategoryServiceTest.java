@@ -10,7 +10,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -41,10 +40,8 @@ public class CategoryServiceTest {
         CategoryCreateRequest request = new CategoryCreateRequest();
         request.setName("新しいカテゴリ");
 
-        when(categoryRepository.findByNameAndUserIdAndDeletedFalse("新しいカテゴリ", testUserId))
-                .thenReturn(Optional.empty());
-        when(categoryRepository.findByNameAndUserIdAndDeletedFalse("新しいカテゴリ", testSystemUserId))
-                .thenReturn(Optional.empty());
+        when(categoryRepository.existsByNameAndUserIdInAndDeletedFalse(anyString(), any(List.class)))
+                .thenReturn(false);  // 重複なし
         when(categoryRepository.countByUserIdAndDeletedFalse(testUserId))
                 .thenReturn(10L);
         when(categoryRepository.save(any(Category.class)))
@@ -64,8 +61,8 @@ public class CategoryServiceTest {
         // Arrange
         CategoryCreateRequest request = new CategoryCreateRequest();
         request.setName("重複カテゴリ");
-        when(categoryRepository.findByNameAndUserIdAndDeletedFalse("重複カテゴリ", testUserId))
-                .thenReturn(Optional.of(new Category()));
+        when(categoryRepository.existsByNameAndUserIdInAndDeletedFalse(anyString(), any(List.class)))
+                .thenReturn(true); // 重複あり
 
         // Act & Assert
         assertThrows(CategoryNameDuplicateException.class, () -> {

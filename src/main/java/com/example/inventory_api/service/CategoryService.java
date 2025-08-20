@@ -33,16 +33,10 @@ public class CategoryService {
     public Category createCategory(CategoryCreateRequest request, String userId) {
 
         // 要件：デフォルトカテゴリ及び自身のカスタムカテゴリ内で、カテゴリ名が重複しない
-        categoryRepository.findByNameAndUserIdAndDeletedFalse(request.getName(), userId)
-                .ifPresent(c -> {
-                    // カスタムカテゴリに同じカテゴリ名が存在すれば例外をスロー
-                    throw new CategoryNameDuplicateException("そのカテゴリ名は既に使用されています");
-                });
-        categoryRepository.findByNameAndUserIdAndDeletedFalse(request.getName(), SYSTEM_USER_ID)
-                .ifPresent(c -> {
-                    // デフォルトカテゴリに同じカテゴリ名が存在すれば例外をスロー
-                    throw new CategoryNameDuplicateException("そのカテゴリ名は既に使用されています");
-                });
+        List<String> userIdsToCheck = List.of(userId, SYSTEM_USER_ID);
+        if (categoryRepository.existsByNameAndUserIdInAndDeletedFalse(request.getName(), userIdsToCheck)) {
+            throw new CategoryNameDuplicateException("そのカテゴリ名は既に使用されています");
+        }
 
         // 要件：ユーザーが作成できるカスタムカテゴリは50件まで
         long categoryCount = categoryRepository.countByUserIdAndDeletedFalse(userId);

@@ -19,6 +19,9 @@ public interface CategoryRepository extends JpaRepository<Category, Integer> {
     // 「特定のuser_idかつ削除されていないもの」を数える
     long countByUserIdAndDeletedFalse(String userId);
 
+    // 指定したカテゴリ名が、userIdsのリストに存在するかチェック
+    boolean existsByNameAndUserIdInAndDeletedFalse(String name, List<String> userIds);
+
     // ログインユーザーのカスタムカテゴリとデフォルトカテゴリの一覧を取得する
     // 「(user_idかつ削除されていない)または(2つめの引数のsystemUser_idかつ削除されていない)もの」を取得
     List<Category> findByUserIdAndDeletedFalseOrUserIdAndDeletedFalse(String userId, String systemUserId);
