@@ -3,8 +3,6 @@ package com.example.inventory_api.service;
 import com.example.inventory_api.controller.dto.CategoryCreateRequest;
 import com.example.inventory_api.domain.model.Category;
 import com.example.inventory_api.domain.repository.CategoryRepository;
-import com.example.inventory_api.service.exception.CategoryLimitExceededException;
-import com.example.inventory_api.service.exception.CategoryNameDuplicateException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -64,7 +62,7 @@ public class CategoryServiceTest {
                 .thenReturn(List.of(existingCategory));
 
         // Act & Assert
-        assertThrows(CategoryNameDuplicateException.class, () -> {
+        assertThrows(IllegalStateException.class, () -> {
             categoryService.createCategory(request, testUserId);
         });
         // saveが呼ばれないことを確認
@@ -91,7 +89,7 @@ public class CategoryServiceTest {
                 .thenReturn(fullList);
 
         // Act and Assert
-        assertThrows(CategoryLimitExceededException.class, () -> {
+        assertThrows(IllegalStateException.class, () -> {
             categoryService.createCategory(request, testUserId);
         });
         // saveが呼ばれないことを確認
