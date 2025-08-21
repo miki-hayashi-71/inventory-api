@@ -3,8 +3,6 @@ package com.example.inventory_api.service;
 import com.example.inventory_api.controller.dto.CategoryCreateRequest;
 import com.example.inventory_api.domain.model.Category;
 import com.example.inventory_api.domain.repository.CategoryRepository;
-import com.example.inventory_api.service.exception.CategoryLimitExceededException;
-import com.example.inventory_api.service.exception.CategoryNameDuplicateException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -31,7 +29,7 @@ public class CategoryService {
         boolean isDuplicate = existingCategories.stream()
                 .anyMatch(category -> category.getName().equals(request.getName()));
         if (isDuplicate) {
-            throw new CategoryNameDuplicateException("そのカテゴリ名は既に使用されています");
+            throw new IllegalStateException("DUPLICATE:そのカテゴリ名は既に使用されています");
         }
 
         // 取得したリストからカスタムカテゴリの上限チェック
@@ -39,7 +37,7 @@ public class CategoryService {
                 .filter(category -> category.getUserId().equals(userId))
                 .count();
         if (userCategoryCount >= 50) {
-            throw new CategoryLimitExceededException("登録できるカテゴリの上限に達しています");
+            throw new IllegalStateException("LIMIT:登録できるカテゴリの上限に達しています");
         }
 
         // 新しいカテゴリを作成して保存
