@@ -4,14 +4,14 @@ import com.example.inventory_api.controller.dto.CategoryCreateRequest;
 import com.example.inventory_api.controller.dto.CategoryResponse;
 import com.example.inventory_api.domain.model.Category;
 import com.example.inventory_api.domain.repository.CategoryRepository;
+import com.ibm.icu.text.Collator;
+import com.ibm.icu.util.ULocale;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
-import com.ibm.icu.text.Collator;
-import com.ibm.icu.util.ULocale;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -42,7 +42,7 @@ public class CategoryService {
     @Transactional  // このメソッド内の処理をすべて一つのトランザクション（全て成功or全て失敗）として実行
     public Category createCategory(CategoryCreateRequest request, String userId) {
 
-        try{
+        try {
             // ログインユーザーとシステムユーザーのカテゴリを取得する
             List<String> userIdsToCheck = List.of(userId, SYSTEM_USER_ID);
             List<Category> existingCategories = categoryRepository.findByUserIdInAndDeletedFalse(userIdsToCheck);
@@ -82,9 +82,9 @@ public class CategoryService {
     }
 
     /**
-      カスタムカテゴリの一覧を取得
-      GET /categories
-      */
+     * カスタムカテゴリの一覧を取得
+     * GET /categories
+     */
     public List<CategoryResponse> getCategoryList(String userId) {
         try {
             // DBからカスタムカテゴリとデフォルトカテゴリを取得する
