@@ -6,21 +6,19 @@ import com.example.inventory_api.domain.repository.CategoryRepository;
 import com.example.inventory_api.service.exception.CategoryLimitExceededException;
 import com.example.inventory_api.service.exception.CategoryNameDuplicateException;
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class CategoryService {
 
     private final CategoryRepository categoryRepository;
 
     // システムユーザー（仮）
     private static final String SYSTEM_USER_ID = "system";
-
-    public CategoryService(CategoryRepository categoryRepository) {
-        this.categoryRepository = categoryRepository;
-    }
 
     @Transactional  // このメソッド内の処理をすべて一つのトランザクション（全て成功or全て失敗）として実行
     public Category createCategory(CategoryCreateRequest request, String userId) {

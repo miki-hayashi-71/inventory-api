@@ -4,19 +4,17 @@ import com.example.inventory_api.controller.dto.CategoryCreateRequest;
 import com.example.inventory_api.controller.dto.CategoryResponse;
 import com.example.inventory_api.domain.model.Category;
 import com.example.inventory_api.service.CategoryService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/categories")
+@RequiredArgsConstructor
 public class CategoryController {
 
     private final CategoryService categoryService;
-
-    public CategoryController(CategoryService categoryService) {
-        this.categoryService = categoryService;
-    }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
