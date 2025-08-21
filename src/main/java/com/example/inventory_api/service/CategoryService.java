@@ -5,6 +5,7 @@ import com.example.inventory_api.domain.model.Category;
 import com.example.inventory_api.domain.repository.CategoryRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -47,6 +48,10 @@ public class CategoryService {
         newCategory.setUserId(userId);
         newCategory.setDeleted(false);
 
-        return categoryRepository.save(newCategory);
+        try {
+            return categoryRepository.save(newCategory);
+        } catch (DataAccessException e) {
+            throw new RuntimeException("データベースへの保存に失敗しました", e);
+        }
     }
 }
