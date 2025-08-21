@@ -8,6 +8,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataAccessResourceFailureException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -94,6 +95,27 @@ public class CategoryServiceTest {
         });
         // saveが呼ばれないことを確認
         verify(categoryRepository, never()).save(any(Category.class));
+    }
+
+    @Test
+    void createCategory_DB保存時にエラーが発生する場合_RuntimeExceptionをスローする() {
+        // Arrange
+        CategoryCreateRequest request = new CategoryCreateRequest();
+        request.setName("新しいカテゴリ");
+
+        // 重複なし、上限未達
+        when(categoryRepository.findByUserIdInAndDeletedFalse(any(List.class)))
+                .thenReturn(new ArrayList<>());
+
+        // repository.save()が呼ばれたら、DataAccessExceptionをスローするよう設定
+        when(categoryRepository.save(any(Category.class)))
+                .thenThrow(new DataAccessResourceFailureException("DB接続エラー"));
+
+        // Act & Assert
+        // ServiceがRuntimeExceptionをスローすることを確認
+        assertThrows(RuntimeException.class, () -> {
+            categoryService.createCategory(request, testUserId);
+        });
     }
 }
 

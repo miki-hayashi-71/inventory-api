@@ -119,4 +119,22 @@ public class CategoryControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("CATEGORY_LIMIT_EXCEEDED"));
     }
+
+    @Test
+    void createCategory_DB保存失敗時にRuntimeExceptionが発生する場合_500InternalServerErrorを返す() throws Exception {
+        // Arrange
+        CategoryCreateRequest request = new CategoryCreateRequest();
+        request.setName("テストカテゴリ");
+
+        // ServiceがRuntimeExceptionをスローするよう設定
+        when(categoryService.createCategory(any(), anyString()))
+                .thenThrow(new RuntimeException("データベースへの保存に失敗しました"));
+
+        // Act & Assert
+        mockmvc.perform(post("/categories")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isInternalServerError()) // 500エラーを期待
+                .andExpect(jsonPath("$.code").value("INTERNAL_SERVER_ERROR"));
+    }
 }
