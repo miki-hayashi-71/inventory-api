@@ -98,6 +98,37 @@ public class CategoryServiceTest {
     }
 
     @Test
+    void createCategory_登録済みカテゴリ数が49件の場合_50件目のカテゴリが作成できる() {
+        // Arrange
+        CategoryCreateRequest request = new CategoryCreateRequest();
+        request.setName("50個目のカスタムカテゴリ");
+
+        // 50件登録済みのリストを作成
+        List<Category> fullList = new ArrayList<>();
+        for (int i = 0; i < 29; i++) {
+            Category c = new Category();
+            c.setUserId(testUserId);
+            c.setName("カテゴリ" + i);
+            fullList.add(c);
+        }
+
+        // repositoryが50件のリストを返すよう設定
+        when(categoryRepository.findByUserIdInAndDeletedFalse(any(List.class)))
+                .thenReturn(fullList);
+        when(categoryRepository.save(any(Category.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        // Act
+        Category result = categoryService.createCategory(request, testUserId);
+
+        // Assert
+        // 例外がスローされず、カテゴリが正しく作成されたことを確認
+        assertThat(result.getName()).isEqualTo("50個目のカスタムカテゴリ");
+        // saveが1回呼ばれたことを確認
+        verify(categoryRepository, times(1)).save(any(Category.class));
+    }
+
+    @Test
     void createCategory_DB保存時にエラーが発生する場合_RuntimeExceptionをスローする() {
         // Arrange
         CategoryCreateRequest request = new CategoryCreateRequest();
