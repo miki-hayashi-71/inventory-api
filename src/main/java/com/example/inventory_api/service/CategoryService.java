@@ -23,15 +23,22 @@ public class CategoryService {
     @Transactional  // このメソッド内の処理をすべて一つのトランザクション（全て成功or全て失敗）として実行
     public Category createCategory(CategoryCreateRequest request, String userId) {
 
-        // 要件：デフォルトカテゴリ及び自身のカスタムカテゴリ内で、カテゴリ名が重複しない
+        // ログインユーザーとシステムユーザーのカテゴリを取得する
         List<String> userIdsToCheck = List.of(userId, SYSTEM_USER_ID);
-        if (categoryRepository.existsByNameAndUserIdInAndDeletedFalse(request.getName(), userIdsToCheck)) {
+        List<Category> existingCategories = categoryRepository.findByUserIdInAndDeletedFalse(userIdsToCheck);
+
+        // 重複チェック
+        boolean isDuplicate = existingCategories.stream()
+                .anyMatch(category -> category.getName().equals(request.getName()));
+        if (isDuplicate) {
             throw new CategoryNameDuplicateException("そのカテゴリ名は既に使用されています");
         }
 
-        // 要件：ユーザーが作成できるカスタムカテゴリは50件まで
-        long categoryCount = categoryRepository.countByUserIdAndDeletedFalse(userId);
-        if (categoryCount >= 50) {
+        // 取得したリストからカスタムカテゴリの上限チェック
+        long userCategoryCount = existingCategories.stream()
+                .filter(category -> category.getUserId().equals(userId))
+                .count();
+        if (userCategoryCount >= 50) {
             throw new CategoryLimitExceededException("登録できるカテゴリの上限に達しています");
         }
 
