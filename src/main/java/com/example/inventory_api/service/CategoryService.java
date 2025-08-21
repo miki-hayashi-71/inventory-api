@@ -44,7 +44,7 @@ public class CategoryService {
     @Transactional  // このメソッド内の処理をすべて一つのトランザクション（全て成功or全て失敗）として実行
     public Category createCategory(CategoryCreateRequest request, String userId) {
 
-        try{
+        try {
             // ログインユーザーとシステムユーザーのカテゴリを取得する
             List<String> userIdsToCheck = List.of(userId, SYSTEM_USER_ID);
             List<Category> existingCategories = categoryRepository.findByUserIdInAndDeletedFalse(userIdsToCheck);
@@ -84,9 +84,9 @@ public class CategoryService {
     }
 
     /**
-      カスタムカテゴリの一覧を取得
-      GET /categories
-      */
+     * カスタムカテゴリの一覧を取得
+     * GET /categories
+     */
     public List<CategoryResponse> getCategoryList(String userId) {
         try {
             // DBからカスタムカテゴリとデフォルトカテゴリを取得する
