@@ -3,9 +3,9 @@ package com.example.inventory_api.service;
 import com.example.inventory_api.controller.dto.CategoryCreateRequest;
 import com.example.inventory_api.domain.model.Category;
 import com.example.inventory_api.domain.repository.CategoryRepository;
-import com.example.inventory_api.service.exception.CategoryLimitExceededException;
-import com.example.inventory_api.service.exception.CategoryNameDuplicateException;
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
 import com.ibm.icu.text.Collator;
@@ -14,16 +14,13 @@ import java.util.Comparator;
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class CategoryService {
 
     private final CategoryRepository categoryRepository;
 
     // システムユーザー（仮）
     private static final String SYSTEM_USER_ID = "system";
-
-    public CategoryService(CategoryRepository categoryRepository) {
-        this.categoryRepository = categoryRepository;
-    }
 
     /**
      * 新しいカスタムカテゴリを1件登録
@@ -32,16 +29,23 @@ public class CategoryService {
     @Transactional  // このメソッド内の処理をすべて一つのトランザクション（全て成功or全て失敗）として実行
     public Category createCategory(CategoryCreateRequest request, String userId) {
 
-        // 要件：デフォルトカテゴリ及び自身のカスタムカテゴリ内で、カテゴリ名が重複しない
+        // ログインユーザーとシステムユーザーのカテゴリを取得する
         List<String> userIdsToCheck = List.of(userId, SYSTEM_USER_ID);
-        if (categoryRepository.existsByNameAndUserIdInAndDeletedFalse(request.getName(), userIdsToCheck)) {
-            throw new CategoryNameDuplicateException("そのカテゴリ名は既に使用されています");
+        List<Category> existingCategories = categoryRepository.findByUserIdInAndDeletedFalse(userIdsToCheck);
+
+        // 重複チェック
+        boolean isDuplicate = existingCategories.stream()
+                .anyMatch(category -> category.getName().equals(request.getName()));
+        if (isDuplicate) {
+            throw new IllegalStateException("DUPLICATE:そのカテゴリ名は既に使用されています");
         }
 
-        // 要件：ユーザーが作成できるカスタムカテゴリは50件まで
-        long categoryCount = categoryRepository.countByUserIdAndDeletedFalse(userId);
-        if (categoryCount >= 50) {
-            throw new CategoryLimitExceededException("登録できるカテゴリの上限に達しています");
+        // 取得したリストからカスタムカテゴリの上限チェック
+        long userCategoryCount = existingCategories.stream()
+                .filter(category -> category.getUserId().equals(userId))
+                .count();
+        if (userCategoryCount >= 50) {
+            throw new IllegalStateException("LIMIT:登録できるカテゴリの上限に達しています");
         }
 
         // 新しいカテゴリを作成して保存
@@ -51,7 +55,11 @@ public class CategoryService {
         newCategory.setUserId(userId);
         newCategory.setDeleted(false);
 
-        return categoryRepository.save(newCategory);
+        try {
+            return categoryRepository.save(newCategory);
+        } catch (DataAccessException e) {
+            throw new RuntimeException("データベースへの保存に失敗しました", e);
+        }
     }
 
     /**

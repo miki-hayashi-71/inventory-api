@@ -3,16 +3,15 @@ package com.example.inventory_api.service;
 import com.example.inventory_api.controller.dto.CategoryCreateRequest;
 import com.example.inventory_api.domain.model.Category;
 import com.example.inventory_api.domain.repository.CategoryRepository;
-import com.example.inventory_api.service.exception.CategoryLimitExceededException;
-import com.example.inventory_api.service.exception.CategoryNameDuplicateException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataAccessResourceFailureException;
+
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -40,10 +39,9 @@ public class CategoryServiceTest {
         CategoryCreateRequest request = new CategoryCreateRequest();
         request.setName("新しいカテゴリ");
 
-        when(categoryRepository.existsByNameAndUserIdInAndDeletedFalse(anyString(), any(List.class)))
-                .thenReturn(false);  // 重複なし
-        when(categoryRepository.countByUserIdAndDeletedFalse(testUserId))
-                .thenReturn(10L);
+        // 重複なし、上限未達
+        when(categoryRepository.findByUserIdInAndDeletedFalse(any(List.class)))
+                .thenReturn(new ArrayList<>());
         when(categoryRepository.save(any(Category.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -60,26 +58,97 @@ public class CategoryServiceTest {
     void createCategory_カテゴリ名が重複する場合_CategoryNameDuplicateExceptionをスローする() {
         // Arrange
         CategoryCreateRequest request = new CategoryCreateRequest();
-        request.setName("重複カテゴリ");
-        when(categoryRepository.existsByNameAndUserIdInAndDeletedFalse(anyString(), any(List.class)))
-                .thenReturn(true); // 重複あり
+        request.setName("重複カテゴリ"); // 作りたいカテゴリ
+
+        Category existingCategory = new Category();
+        existingCategory.setName("重複カテゴリ"); // 既に存在するカテゴリ
+
+        when(categoryRepository.findByUserIdInAndDeletedFalse(any(List.class)))
+                .thenReturn(List.of(existingCategory));
 
         // Act & Assert
-        assertThrows(CategoryNameDuplicateException.class, () -> {
+        assertThrows(IllegalStateException.class, () -> {
             categoryService.createCategory(request, testUserId);
         });
+        // saveが呼ばれないことを確認
+        verify(categoryRepository, never()).save(any(Category.class));
     }
 
     @Test
     void createCategory_登録上限に達している場合_CategoryLimitExceededExceptionをスローする() {
         // Arrange
         CategoryCreateRequest request = new CategoryCreateRequest();
-        request.setName("新しいカテゴリ");
-        when(categoryRepository.countByUserIdAndDeletedFalse(testUserId))
-                .thenReturn(50L);
+        request.setName("51個目のカスタムカテゴリ");
+
+        // 50件登録済みのリストを作成
+        List<Category> fullList = new ArrayList<>();
+        for (int i = 0; i < 50; i++) {
+            Category c = new Category();
+            c.setUserId(testUserId);
+            c.setName("カテゴリ" + i);
+            fullList.add(c);
+        }
+
+        // repositoryが50件のリストを返すよう設定
+        when(categoryRepository.findByUserIdInAndDeletedFalse(any(List.class)))
+                .thenReturn(fullList);
 
         // Act and Assert
-        assertThrows(CategoryLimitExceededException.class, () -> {
+        assertThrows(IllegalStateException.class, () -> {
+            categoryService.createCategory(request, testUserId);
+        });
+        // saveが呼ばれないことを確認
+        verify(categoryRepository, never()).save(any(Category.class));
+    }
+
+    @Test
+    void createCategory_登録済みカテゴリ数が49件の場合_50件目のカテゴリが作成できる() {
+        // Arrange
+        CategoryCreateRequest request = new CategoryCreateRequest();
+        request.setName("50個目のカスタムカテゴリ");
+
+        // 50件登録済みのリストを作成
+        List<Category> fullList = new ArrayList<>();
+        for (int i = 0; i < 29; i++) {
+            Category c = new Category();
+            c.setUserId(testUserId);
+            c.setName("カテゴリ" + i);
+            fullList.add(c);
+        }
+
+        // repositoryが50件のリストを返すよう設定
+        when(categoryRepository.findByUserIdInAndDeletedFalse(any(List.class)))
+                .thenReturn(fullList);
+        when(categoryRepository.save(any(Category.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        // Act
+        Category result = categoryService.createCategory(request, testUserId);
+
+        // Assert
+        // 例外がスローされず、カテゴリが正しく作成されたことを確認
+        assertThat(result.getName()).isEqualTo("50個目のカスタムカテゴリ");
+        // saveが1回呼ばれたことを確認
+        verify(categoryRepository, times(1)).save(any(Category.class));
+    }
+
+    @Test
+    void createCategory_DB保存時にエラーが発生する場合_RuntimeExceptionをスローする() {
+        // Arrange
+        CategoryCreateRequest request = new CategoryCreateRequest();
+        request.setName("新しいカテゴリ");
+
+        // 重複なし、上限未達
+        when(categoryRepository.findByUserIdInAndDeletedFalse(any(List.class)))
+                .thenReturn(new ArrayList<>());
+
+        // repository.save()が呼ばれたら、DataAccessExceptionをスローするよう設定
+        when(categoryRepository.save(any(Category.class)))
+                .thenThrow(new DataAccessResourceFailureException("DB接続エラー"));
+
+        // Act & Assert
+        // ServiceがRuntimeExceptionをスローすることを確認
+        assertThrows(RuntimeException.class, () -> {
             categoryService.createCategory(request, testUserId);
         });
     }

@@ -4,8 +4,6 @@ import com.example.inventory_api.controller.advice.CustomExceptionHandler;
 import com.example.inventory_api.controller.dto.CategoryCreateRequest;
 import com.example.inventory_api.domain.model.Category;
 import com.example.inventory_api.service.CategoryService;
-import com.example.inventory_api.service.exception.CategoryLimitExceededException;
-import com.example.inventory_api.service.exception.CategoryNameDuplicateException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -101,7 +99,7 @@ public class CategoryControllerTest {
         request.setName("重複カテゴリ");
 
         when(categoryService.createCategory(any(), anyString()))
-                .thenThrow(new CategoryNameDuplicateException("そのカテゴリ名は既に使用されています"));
+                .thenThrow(new IllegalStateException("DUPLICATE:そのカテゴリ名は既に使用されています"));
 
         // Act & Assert
         mockmvc.perform(post("/categories")
@@ -119,7 +117,7 @@ public class CategoryControllerTest {
 
         // Serviceが上限エラーを投げるように設定
         when(categoryService.createCategory(any(), anyString()))
-                .thenThrow(new CategoryLimitExceededException("登録できるカテゴリの上限に達しています"));
+                .thenThrow(new IllegalStateException("LIMIT:登録できるカテゴリの上限に達しています"));
 
         // Act & Assert
         mockmvc.perform(post("/categories")
@@ -127,6 +125,24 @@ public class CategoryControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("CATEGORY_LIMIT_EXCEEDED"));
+    }
+
+    @Test
+    void createCategory_DB保存失敗時にRuntimeExceptionが発生する場合_500InternalServerErrorを返す() throws Exception {
+        // Arrange
+        CategoryCreateRequest request = new CategoryCreateRequest();
+        request.setName("テストカテゴリ");
+
+        // ServiceがRuntimeExceptionをスローするよう設定
+        when(categoryService.createCategory(any(), anyString()))
+                .thenThrow(new RuntimeException("データベースへの保存に失敗しました"));
+
+        // Act & Assert
+        mockmvc.perform(post("/categories")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isInternalServerError()) // 500エラーを期待
+                .andExpect(jsonPath("$.code").value("INTERNAL_SERVER_ERROR"));
     }
 
     /**
