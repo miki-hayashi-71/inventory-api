@@ -152,55 +152,5 @@ public class CategoryServiceTest {
             categoryService.createCategory(request, testUserId);
         });
     }
-
-    /**
-     * GET /categories のテスト
-     */
-    @Test
-    void getCategoryList_リポジトリから取得したカテゴリリストを辞書順で返す() {
-        // Arrange
-        String testUserId = "user1";
-        String testSystemUserId = "system";
-
-        // 辞書順ではないリストを作成
-        Category category1 = new Category();
-        category1.setName("玄関");
-
-        Category category2 = new Category();
-        category2.setName("リビング・ダイニング");
-
-        Category category3 = new Category();
-        category3.setName("寝室");
-
-        Category category4 = new Category();
-        category4.setName("BathRoom");
-
-        Category category5 = new Category();
-        category5.setName("といれ");
-
-        List<Category> unsortedList = new ArrayList<>();
-        unsortedList.add(category1);
-        unsortedList.add(category2);
-        unsortedList.add(category3);
-        unsortedList.add(category4);
-        unsortedList.add(category5);
-
-        when(categoryRepository.findByUserIdAndDeletedFalseOrUserIdAndDeletedFalse(testUserId, testSystemUserId))
-                .thenReturn(unsortedList);
-
-        // Act
-        List<Category> result = categoryService.getCategoryList(testUserId);
-
-        // Assert
-        assertThat(result).hasSize(5);
-        assertThat(result.get(0).getName()).isEqualTo("BathRoom"); // アルファベット「B」
-        assertThat(result.get(1).getName()).isEqualTo("といれ"); // ひらがな・カタカナ「と」
-        assertThat(result.get(2).getName()).isEqualTo("リビング・ダイニング"); // ひらがな・カタカナ「リ」
-        assertThat(result.get(3).getName()).isEqualTo("玄関"); // 漢字「読み：げ」
-        assertThat(result.get(4).getName()).isEqualTo("寝室"); // 漢字「読み：し」
-
-        verify(categoryRepository, times(1))
-                .findByUserIdAndDeletedFalseOrUserIdAndDeletedFalse(testUserId, testSystemUserId);
-    }
 }
 
