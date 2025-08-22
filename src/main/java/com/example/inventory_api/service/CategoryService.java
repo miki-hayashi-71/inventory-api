@@ -67,13 +67,14 @@ public class CategoryService {
       GET /categories
       */
     public List<Category> getCategoryList(String userId) {
-        // DBからカスタムカテゴリとデフォルトカテゴリを取得する
-        List<Category> categories = categoryRepository.findByUserIdAndDeletedFalseOrUserIdAndDeletedFalse(userId, SYSTEM_USER_ID);
+        // ログインユーザーとシステムユーザーのIDをリストにまとめる
+        List<String> userIdsToSearch = List.of(userId, SYSTEM_USER_ID);
+        // 共通化されたメソッドを呼び出す
+        List<Category> categories = categoryRepository.findByUserIdInAndDeletedFalse(userIdsToSearch);
 
-        // 日本語の辞書順でソートするためのCollatorを準備
+        // 日本語の辞書順でソート
         Collator collator = Collator.getInstance(ULocale.JAPANESE);
-
-        // 取得したリストをCollatorで並び替え
+        collator.setStrength(Collator.PRIMARY);
         categories.sort(Comparator.comparing(Category::getName, collator));
 
         return categories;
