@@ -27,7 +27,7 @@ public class DataInitializer implements CommandLineRunner{
 
         for (String name : categoryNames) {
             // アプリを起動するたびにデフォルトカテゴリが作成されないよう、重複チェックを行う
-            if (categoryRepository.findByNameAndUserId(name, SYSTEM_USER_ID).isEmpty()) {
+            if (categoryRepository.findByNameAndUserIdAndDeletedFalse(name, SYSTEM_USER_ID).isEmpty()) {
                 Category category = new Category();
                 category.setUserId(SYSTEM_USER_ID);
                 category.setName(name);
