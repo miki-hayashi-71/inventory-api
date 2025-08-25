@@ -5,6 +5,7 @@ import com.example.inventory_api.domain.model.Category;
 import com.example.inventory_api.domain.repository.CategoryRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
@@ -15,6 +16,10 @@ import java.util.List;
 public class CategoryService {
 
     private final CategoryRepository categoryRepository;
+
+    // @Valueアノテーションでプロパティファイルから値を読み込む
+    @Value("${app.custom-category.max-limit}")
+    private int maxCustomCategoryLimit;
 
     // システムユーザー（仮）
     private static final String SYSTEM_USER_ID = "system";
@@ -42,7 +47,7 @@ public class CategoryService {
         long userCategoryCount = existingCategories.stream()
                 .filter(category -> category.getUserId().equals(userId))
                 .count();
-        if (userCategoryCount >= 50) {
+        if (userCategoryCount >= maxCustomCategoryLimit) {
             throw new IllegalStateException(VALID_LIMIT_MESSAGE);
         }
 

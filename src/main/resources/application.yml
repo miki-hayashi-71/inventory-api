@@ -23,3 +23,9 @@ spring:
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
+
+# Application specific settings
+app:
+  custom-category:
+    # ??????????????
+    max-limit: 50
