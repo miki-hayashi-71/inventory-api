@@ -112,7 +112,7 @@ public class CategoryServiceTest {
 
         // 50件登録済みのリストを作成
         List<Category> fullCategoryList = new ArrayList<>();
-        for (int i = 0; i < 29; i++) {
+        for (int i = 0; i < 49; i++) {
             Category c = new Category();
             c.setUserId(testUserId);
             c.setName("カテゴリ" + i);
