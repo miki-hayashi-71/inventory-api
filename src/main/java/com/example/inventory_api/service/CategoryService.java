@@ -19,6 +19,11 @@ public class CategoryService {
     // システムユーザー（仮）
     private static final String SYSTEM_USER_ID = "system";
 
+    // エラーメッセージを定数で管理
+    private static final String VALID_DUPLICATE_MESSAGE = "DUPLICATE:そのカテゴリ名は既に使用されています";
+    private static final String VALID_LIMIT_MESSAGE = "LIMIT:登録できるカテゴリの上限に達しています";
+    private static final String DATABASE_SAVE_FAILURE_MESSAGE = "データベースへの保存に失敗しました";
+
     @Transactional  // このメソッド内の処理をすべて一つのトランザクション（全て成功or全て失敗）として実行
     public Category createCategory(CategoryCreateRequest request, String userId) {
 
@@ -30,7 +35,7 @@ public class CategoryService {
         boolean isDuplicate = existingCategories.stream()
                 .anyMatch(category -> category.getName().equals(request.getName()));
         if (isDuplicate) {
-            throw new IllegalStateException("DUPLICATE:そのカテゴリ名は既に使用されています");
+            throw new IllegalStateException(VALID_DUPLICATE_MESSAGE);
         }
 
         // 取得したリストからカスタムカテゴリの上限チェック
@@ -38,7 +43,7 @@ public class CategoryService {
                 .filter(category -> category.getUserId().equals(userId))
                 .count();
         if (userCategoryCount >= 50) {
-            throw new IllegalStateException("LIMIT:登録できるカテゴリの上限に達しています");
+            throw new IllegalStateException(VALID_LIMIT_MESSAGE);
         }
 
         // 新しいカテゴリを作成して保存
@@ -51,7 +56,7 @@ public class CategoryService {
         try {
             return categoryRepository.save(newCategory);
         } catch (DataAccessException e) {
-            throw new RuntimeException("データベースへの保存に失敗しました", e);
+            throw new RuntimeException(DATABASE_SAVE_FAILURE_MESSAGE, e);
         }
     }
 }
