@@ -3,12 +3,14 @@ package com.example.inventory_api.service;
 import com.example.inventory_api.controller.dto.CategoryCreateRequest;
 import com.example.inventory_api.domain.model.Category;
 import com.example.inventory_api.domain.repository.CategoryRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataAccessResourceFailureException;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,6 +30,11 @@ public class CategoryServiceTest {
     private CategoryRepository categoryRepository;
 
     private final String testUserId = "user1";
+
+    @BeforeEach
+    void setUp() {
+        ReflectionTestUtils.setField(categoryService, "maxCustomCategoryLimit", 50);
+    }
 
     @Test
     void createCategory_正常なリクエストの場合_カテゴリが作成される() {
@@ -77,17 +84,17 @@ public class CategoryServiceTest {
         request.setName("51個目のカスタムカテゴリ");
 
         // 50件登録済みのリストを作成
-        List<Category> fullList = new ArrayList<>();
+        List<Category> fullCategoryList = new ArrayList<>();
         for (int i = 0; i < 50; i++) {
             Category c = new Category();
             c.setUserId(testUserId);
             c.setName("カテゴリ" + i);
-            fullList.add(c);
+            fullCategoryList.add(c);
         }
 
         // repositoryが50件のリストを返すよう設定
         when(categoryRepository.findByUserIdInAndDeletedFalse(any(List.class)))
-                .thenReturn(fullList);
+                .thenReturn(fullCategoryList);
 
         // Act and Assert
         assertThrows(IllegalStateException.class, () -> {
@@ -104,17 +111,17 @@ public class CategoryServiceTest {
         request.setName("50個目のカスタムカテゴリ");
 
         // 50件登録済みのリストを作成
-        List<Category> fullList = new ArrayList<>();
+        List<Category> fullCategoryList = new ArrayList<>();
         for (int i = 0; i < 29; i++) {
             Category c = new Category();
             c.setUserId(testUserId);
             c.setName("カテゴリ" + i);
-            fullList.add(c);
+            fullCategoryList.add(c);
         }
 
         // repositoryが50件のリストを返すよう設定
         when(categoryRepository.findByUserIdInAndDeletedFalse(any(List.class)))
-                .thenReturn(fullList);
+                .thenReturn(fullCategoryList);
         when(categoryRepository.save(any(Category.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
