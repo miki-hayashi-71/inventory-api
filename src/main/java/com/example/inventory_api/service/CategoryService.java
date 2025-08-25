@@ -27,41 +27,48 @@ public class CategoryService {
     // エラーメッセージを定数で管理
     private static final String VALID_DUPLICATE_MESSAGE = "DUPLICATE:そのカテゴリ名は既に使用されています";
     private static final String VALID_LIMIT_MESSAGE = "LIMIT:登録できるカテゴリの上限に達しています";
-    private static final String DATABASE_SAVE_FAILURE_MESSAGE = "データベースへの保存に失敗しました";
+    private static final String DATABASE_ACCESS_FAILURE_MESSAGE = "データベースへの保存に失敗しました";
+    private static final String UNEXPECTED_ERROR_MESSAGE = "予期せぬエラーが発生しました";
 
     @Transactional  // このメソッド内の処理をすべて一つのトランザクション（全て成功or全て失敗）として実行
     public Category createCategory(CategoryCreateRequest request, String userId) {
 
-        // ログインユーザーとシステムユーザーのカテゴリを取得する
-        List<String> userIdsToCheck = List.of(userId, SYSTEM_USER_ID);
-        List<Category> existingCategories = categoryRepository.findByUserIdInAndDeletedFalse(userIdsToCheck);
+        try{
+            // ログインユーザーとシステムユーザーのカテゴリを取得する
+            List<String> userIdsToCheck = List.of(userId, SYSTEM_USER_ID);
+            List<Category> existingCategories = categoryRepository.findByUserIdInAndDeletedFalse(userIdsToCheck);
 
-        // 重複チェック
-        boolean isDuplicate = existingCategories.stream()
-                .anyMatch(category -> category.getName().equals(request.getName()));
-        if (isDuplicate) {
-            throw new IllegalStateException(VALID_DUPLICATE_MESSAGE);
-        }
+            // 重複チェック
+            boolean isDuplicate = existingCategories.stream()
+                    .anyMatch(category -> category.getName().equals(request.getName()));
+            if (isDuplicate) {
+                throw new IllegalStateException(VALID_DUPLICATE_MESSAGE);
+            }
 
-        // 取得したリストからカスタムカテゴリの上限チェック
-        long userCategoryCount = existingCategories.stream()
-                .filter(category -> category.getUserId().equals(userId))
-                .count();
-        if (userCategoryCount >= maxCustomCategoryLimit) {
-            throw new IllegalStateException(VALID_LIMIT_MESSAGE);
-        }
+            // 取得したリストからカスタムカテゴリの上限チェック
+            long userCategoryCount = existingCategories.stream()
+                    .filter(category -> category.getUserId().equals(userId))
+                    .count();
+            if (userCategoryCount >= maxCustomCategoryLimit) {
+                throw new IllegalStateException(VALID_LIMIT_MESSAGE);
+            }
 
-        // 新しいカテゴリを作成して保存
-        Category newCategory = new Category();
+            // 新しいカテゴリを作成して保存
+            Category newCategory = new Category();
 
-        newCategory.setName(request.getName());
-        newCategory.setUserId(userId);
-        newCategory.setDeleted(false);
+            newCategory.setName(request.getName());
+            newCategory.setUserId(userId);
+            newCategory.setDeleted(false);
 
-        try {
             return categoryRepository.save(newCategory);
+        } catch (IllegalStateException e) {
+            throw e;
         } catch (DataAccessException e) {
-            throw new RuntimeException(DATABASE_SAVE_FAILURE_MESSAGE, e);
+            throw new RuntimeException(DATABASE_ACCESS_FAILURE_MESSAGE, e);
+        } catch (NullPointerException | IllegalArgumentException e) {  // TODO: 例外パターンを追加する
+            throw new RuntimeException(UNEXPECTED_ERROR_MESSAGE, e);
+        } catch (Exception e) {
+            throw new RuntimeException(UNEXPECTED_ERROR_MESSAGE, e);
         }
     }
 }
