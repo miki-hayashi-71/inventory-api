@@ -1,6 +1,7 @@
 package com.example.inventory_api.service;
 
 import com.example.inventory_api.controller.dto.CategoryCreateRequest;
+import com.example.inventory_api.controller.dto.CategoryUpdateRequest;
 import com.example.inventory_api.domain.model.Category;
 import com.example.inventory_api.domain.repository.CategoryRepository;
 import jakarta.transaction.Transactional;
@@ -12,6 +13,7 @@ import com.ibm.icu.text.Collator;
 import com.ibm.icu.util.ULocale;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -78,5 +80,43 @@ public class CategoryService {
         categories.sort(Comparator.comparing(Category::getName, collator));
 
         return categories;
+    }
+
+    /**
+     * カスタムカテゴリを1件更新
+     * PATCH /categories/{categoryId}
+     */
+    @Transactional
+    public Category updateCategory(Integer categoryId, CategoryUpdateRequest request, String userId) {
+        // 更新対象のカテゴリをDBから取得
+        Category categoryToUpdate = categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new IllegalStateException("NOT_FOUND:該当のカテゴリが見つかりません"));
+
+        // 編集権限(デフォルトカテゴリでないか）をチェック
+        if (SYSTEM_USER_ID.equals(categoryToUpdate.getUserId())) {
+            throw new IllegalStateException("FORBIDDEN:デフォルトカテゴリは編集できません");
+        }
+        // 編集権限（自分以外のカテゴリでないか）をチェック
+        if (!categoryToUpdate.getUserId().equals(userId)) {
+            throw new IllegalStateException("FORBIDDEN:このカテゴリを編集する権限がありません");
+        }
+
+        // カテゴリ名の重複チェック
+        List<String> userIdsToCheck = List.of(userId, SYSTEM_USER_ID);
+        List<Category> duplicates = categoryRepository.findByNameAndUserIdInAndDeletedFalse(request.getName(), userIdsToCheck);
+
+        // 取得したリストの中に、更新したいカテゴリ以外のカテゴリが含まれていればエラー
+        if (duplicates.stream().anyMatch(c -> !c.getId().equals(categoryId))) {
+            throw new IllegalStateException("DUPLICATE:そのカテゴリ名は既に使用されています");
+        }
+
+        // カテゴリ名を更新
+        categoryToUpdate.setName(request.getName());
+
+        try {
+            return categoryRepository.save(categoryToUpdate);
+        } catch (DataAccessException e) {
+            throw new RuntimeException("データベースへの保存に失敗しました", e);
+        }
     }
 }

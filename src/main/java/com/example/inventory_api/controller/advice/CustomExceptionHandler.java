@@ -54,6 +54,15 @@ public class CustomExceptionHandler {
             ErrorResponse errorResponse = new ErrorResponse("CATEGORY_LIMIT_EXCEEDED", message.substring(6));
             return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST); // 400
         }
+        if (message.startsWith("NOT_FOUND:")) {
+            ErrorResponse errorResponse = new ErrorResponse("NOT_FOUND_ERROR", message.substring(10));
+            return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND); // 404
+        }
+        if (message.startsWith("FORBIDDEN:")) {
+            ErrorResponse errorResponse = new ErrorResponse("FORBIDDEN_ERROR", message.substring(10));
+            return new ResponseEntity<>(errorResponse, HttpStatus.FORBIDDEN); // 403
+        }
+
         // その他のIllegalStateExceptionは汎用的な400エラーとして返す
         ErrorResponse errorResponse = new ErrorResponse("BAD_REQUEST", message);
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST); // 400
