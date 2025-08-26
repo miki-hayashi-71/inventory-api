@@ -89,7 +89,7 @@ public class CategoryRepositoryTest {
         List<Category> result = categoryRepository.findByUserIdInAndDeletedFalse(userIdsToSearch);
 
         // Assert
-        assertThat(result).hasSize(2); // c1 と c2 の2件が取得されるはず
+        assertThat(result).hasSize(2);
         assertThat(result).extracting(Category::getName).containsExactlyInAnyOrder("カテゴリ1", "カテゴリ2");
     }
 }
