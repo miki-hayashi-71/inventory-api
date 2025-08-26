@@ -40,11 +40,11 @@ public class CategoryController {
 
     /**
      * カテゴリ一覧を取得するAPI
-     * POST /categories
+     * GET /categories
      */
     @GetMapping
     public List<CategoryResponse> getCategoryList() {
-        //  認証機能実装後、実際のuserIdに置き換える
+        //  TODO:認証機能実装後、実際のuserIdに置き換える
         String currentUserId = "user1";
 
         List<Category> categories = categoryService.getCategoryList(currentUserId);

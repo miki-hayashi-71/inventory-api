@@ -25,7 +25,6 @@ public class CategoryRepositoryTest {
      */
     @Test
     void findByNameAndUserIdAndDeletedFalse_未削除のカテゴリが存在する場合_そのカテゴリを返す() {
-    void findByNameAndUserId_指定した名称とユーザーIDのカテゴリが存在する場合_そのカテゴリを返す() {
         // Arrange
         Category testCategory = new Category();
         testCategory.setName("テストカテゴリ");
@@ -96,9 +95,6 @@ public class CategoryRepositoryTest {
         assertThat(result).hasSize(2); // c1 と c2 の2件が取得されるはず
         assertThat(result).extracting(Category::getName).containsExactlyInAnyOrder("カテゴリ1", "カテゴリ2");
     }
-
-
-
 
     /**
      * GET /categories のテスト

@@ -8,13 +8,27 @@ import java.util.List;
 // Categoryエンティティとやり取りを行うリポジトリ（インターフェース）
 public interface CategoryRepository extends JpaRepository<Category, Integer> {
 
-    // デフォルトカテゴリの重複作成を防ぐため、nameとuserIdで一致するものをチェックする。DataInitializerではここが空の場合に処理を進める
+    /**
+     * 指定した名称とユーザーIDに一致し、かつ論理削除されていないカテゴリを検索
+     * DataInitializerでの重複チェックに使用
+     * @param name カテゴリ名
+     * @param userId ユーザーID
+     * @return 条件に一致するカテゴリのリスト
+     */
     List<Category> findByNameAndUserIdAndDeletedFalse(String name, String userId);
 
-    // 指定したuserIdの削除されていないカテゴリを全て取得
+    /**
+     * 指定した複数のユーザーIDに一致し、かつ論理削除されていないカテゴリを全て取得
+     * @param userIds ユーザーIDのリスト
+     * @return 条件に一致するカテゴリのリスト
+     */
     List<Category> findByUserIdInAndDeletedFalse(List<String> userIds);
 
-    // ログインユーザーのカスタムカテゴリとデフォルトカテゴリの一覧を取得する
-    // 「(user_idかつ削除されていない)または(2つめの引数のsystemUser_idかつ削除されていない)もの」を取得
+    /**
+     * ログインユーザーのカスタムカテゴリと、システムのデフォルトカテゴリの一覧を取得
+     * @param userId ログインユーザーのID
+     * @param systemUserId システムユーザーのID
+     * @return ログインユーザーの未削除カテゴリと、システムの未削除カテゴリの合算リスト
+     */
     List<Category> findByUserIdAndDeletedFalseOrUserIdAndDeletedFalse(String userId, String systemUserId);
 }
