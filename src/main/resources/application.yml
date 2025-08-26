@@ -1,31 +1,22 @@
-# application settings
 spring:
   application:
     name: inventory-api
-  # H2 database settings
   datasource:
     url: jdbc:h2:mem:testdb
     driverClassName: org.h2.Driver
     username: sa
     password:
-  # H2 console settings
   h2:
     console:
       enabled: true
       path: /h2-console
-  # JPA(Java Persistence API) settings
   jpa:
     hibernate:
       ddl-auto: update
     show-sql: true
-
-# Swagger UI settings
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
-
-# Application specific settings
 app:
   custom-category:
-    # ??????????????
     max-limit: 50

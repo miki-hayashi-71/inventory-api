@@ -30,6 +30,7 @@ public class CategoryService {
     private static final String SYSTEM_USER_ID = "system";
 
     // エラーメッセージを定数で管理
+    // TODO: メッセージ用のプロパティファイルを用意したい（https://github.com/miki-hayashi-71/inventory-api/pull/18#discussion_r2299559046）
     private static final String VALID_DUPLICATE_MESSAGE = "DUPLICATE:そのカテゴリ名は既に使用されています";
     private static final String VALID_LIMIT_MESSAGE = "LIMIT:登録できるカテゴリの上限に達しています";
     private static final String DATABASE_ACCESS_FAILURE_MESSAGE = "データベースへの保存に失敗しました";
