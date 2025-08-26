@@ -88,22 +88,28 @@ public class CategoryService {
       GET /categories
       */
     public List<CategoryResponse> getCategoryList(String userId) {
-        // DBからカスタムカテゴリとデフォルトカテゴリを取得する
-        List<Category> categories = categoryRepository.findDefaultAndSystemCategories(userId, SYSTEM_USER_ID);
+        try {
+            // DBからカスタムカテゴリとデフォルトカテゴリを取得する
+            List<Category> categories = categoryRepository.findDefaultAndSystemCategories(userId, SYSTEM_USER_ID);
 
-        // 日本語の辞書順でソートするためのCollatorを準備
-        Collator collator = Collator.getInstance(ULocale.JAPANESE);
+            // 日本語の辞書順でソートするためのCollatorを準備
+            Collator collator = Collator.getInstance(ULocale.JAPANESE);
 
-        // ソートしてレスポンスに変換する
-        return categories.stream()
-                .sorted(Comparator.comparing(Category::getName, collator))
-                .map(category -> {
-                    CategoryResponse res = new CategoryResponse();
-                    res.setId(category.getId());
-                    res.setName(category.getName());
-                    return res;
-                })
-                .collect(Collectors.toList());
+            // ソートしてレスポンスに変換する
+            return categories.stream()
+                    .sorted(Comparator.comparing(Category::getName, collator))
+                    .map(category -> {
+                        CategoryResponse res = new CategoryResponse();
+                        res.setId(category.getId());
+                        res.setName(category.getName());
+                        return res;
+                    })
+                    .collect(Collectors.toList());
+        } catch (DataAccessException e) {
+            throw new RuntimeException(DATABASE_ACCESS_FAILURE_MESSAGE, e);
+        } catch (Exception e) {
+            throw new RuntimeException(UNEXPECTED_ERROR_MESSAGE, e);
+        }
     }
 
     /**
