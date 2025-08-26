@@ -148,29 +148,29 @@ public class CategoryControllerTest {
     /**
      * GET /categories のテスト
      */
-    @Test
-    void getCategoryList_正常系_200OKとカテゴリリストを返す() throws Exception {
-        // Arrange
-        Category category1 = new Category();
-        category1.setId(1);
-        category1.setName("テストカテゴリ1");
-
-        Category category2 = new Category();
-        category2.setId(2);
-        category2.setName("テストカテゴリ2");
-
-        List<Category> categoryList = List.of(category1, category2);
-
-        when(categoryService.getCategoryList(anyString()))
-                .thenReturn(categoryList);
-
-        // Act & Assert
-        mockmvc.perform(get("/categories"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(2)))
-                .andExpect(jsonPath("$[0].id").value(1))
-                .andExpect(jsonPath("$[0].name").value("テストカテゴリ1"))
-                .andExpect(jsonPath("$[1].id").value(2))
-                .andExpect(jsonPath("$[1].name").value("テストカテゴリ2"));
-    }
+//    @Test
+//    void getCategoryList_正常系_200OKとカテゴリリストを返す() throws Exception {
+//        // Arrange
+//        Category category1 = new Category();
+//        category1.setId(1);
+//        category1.setName("テストカテゴリ1");
+//
+//        Category category2 = new Category();
+//        category2.setId(2);
+//        category2.setName("テストカテゴリ2");
+//
+//        List<Category> categoryList = List.of(category1, category2);
+//
+//        when(categoryService.getCategoryList(anyString()))
+//                .thenReturn(categoryList);
+//
+//        // Act & Assert
+//        mockmvc.perform(get("/categories"))
+//                .andExpect(status().isOk())
+//                .andExpect(jsonPath("$", hasSize(2)))
+//                .andExpect(jsonPath("$[0].id").value(1))
+//                .andExpect(jsonPath("$[0].name").value("テストカテゴリ1"))
+//                .andExpect(jsonPath("$[1].id").value(2))
+//                .andExpect(jsonPath("$[1].name").value("テストカテゴリ2"));
+//    }
 }

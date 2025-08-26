@@ -87,7 +87,7 @@ public class CategoryService {
       */
     public List<CategoryResponse> getCategoryList(String userId) {
         // DBからカスタムカテゴリとデフォルトカテゴリを取得する
-        List<Category> categories = categoryRepository.findByUserIdAndDeletedFalseOrUserIdAndDeletedFalse(userId, SYSTEM_USER_ID);
+        List<Category> categories = categoryRepository.findDefaultAndSystemCategories(userId, SYSTEM_USER_ID);
 
         // 日本語の辞書順でソートするためのCollatorを準備
         Collator collator = Collator.getInstance(ULocale.JAPANESE);
