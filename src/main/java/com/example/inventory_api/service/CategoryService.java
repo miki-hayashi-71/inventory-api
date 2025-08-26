@@ -1,6 +1,7 @@
 package com.example.inventory_api.service;
 
 import com.example.inventory_api.controller.dto.CategoryCreateRequest;
+import com.example.inventory_api.controller.dto.CategoryResponse;
 import com.example.inventory_api.domain.model.Category;
 import com.example.inventory_api.domain.repository.CategoryRepository;
 import jakarta.transaction.Transactional;
@@ -13,6 +14,7 @@ import com.ibm.icu.text.Collator;
 import com.ibm.icu.util.ULocale;
 import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -83,16 +85,22 @@ public class CategoryService {
       カスタムカテゴリの一覧を取得
       GET /categories
       */
-    public List<Category> getCategoryList(String userId) {
+    public List<CategoryResponse> getCategoryList(String userId) {
         // DBからカスタムカテゴリとデフォルトカテゴリを取得する
         List<Category> categories = categoryRepository.findByUserIdAndDeletedFalseOrUserIdAndDeletedFalse(userId, SYSTEM_USER_ID);
 
         // 日本語の辞書順でソートするためのCollatorを準備
         Collator collator = Collator.getInstance(ULocale.JAPANESE);
 
-        // 取得したリストをCollatorで並び替え
-        categories.sort(Comparator.comparing(Category::getName, collator));
-
-        return categories;
+        // ソートしてレスポンスに変換する
+        return categories.stream()
+                .sorted(Comparator.comparing(Category::getName, collator))
+                .map(category -> {
+                    CategoryResponse res = new CategoryResponse();
+                    res.setId(category.getId());
+                    res.setName(category.getName());
+                    return res;
+                })
+                .collect(Collectors.toList());
     }
 }
