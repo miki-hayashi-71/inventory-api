@@ -6,7 +6,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.NoHandlerFoundException;
 
 @RestControllerAdvice // 全ての@RestControllerに対する共通処理を担うクラスであることを宣言
 public class CustomExceptionHandler {
@@ -19,10 +21,18 @@ public class CustomExceptionHandler {
     private static final String MSG_VALIDATION_ERROR = "不正なリクエストです";
     private static final String MSG_INTERNAL_SERVER_ERROR = "サーバー内部で予期せぬエラーが発生しました";
     private static final String MSG_BAD_REQUEST = "不正なリクエストです";
+    private static final String MSG_NOT_FOUND = "指定されたリソースが見つかりません";
 
     // DTOのバリデーションメッセージに含まれる部分文字列
     private static final String PARTIAL_MSG_REQUIRED = "必須です";
     private static final String PARTIAL_MSG_TOO_LONG = "50文字以内で入力してください";
+
+    // 404 Not Found
+    @ExceptionHandler(NoHandlerFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ErrorResponse handleNoHandlerFoundException(NoHandlerFoundException e) {
+        return new ErrorResponse("NOT_FOUND", MSG_NOT_FOUND);
+    }
 
     // 400 Bad Request: 入力値のチェック
     @ExceptionHandler(MethodArgumentNotValidException.class) // DTOのバリデーションで拾えるもの
