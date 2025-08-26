@@ -160,6 +160,45 @@ public class CategoryServiceTest {
         });
     }
 
+    @Test
+    void createCategory_DB検索時にNullPointerExceptionが発生する場合_RuntimeExceptionをスローする() {
+        // Arrange
+        CategoryCreateRequest request = new CategoryCreateRequest();
+        request.setName("新しいカテゴリ");
+
+        // DB検索時にNullPointerExceptionが発生するよう設定
+        when(categoryRepository.findByUserIdInAndDeletedFalse(any(List.class)))
+                .thenThrow(new NullPointerException("テスト用のエラー"));
+
+        // Act & Assert
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            categoryService.createCategory(request, testUserId);
+        });
+
+        // メッセージの内容と、原因となった例外の型を検証
+        assertThat(exception.getMessage()).isEqualTo("予期せぬエラーが発生しました");
+        assertThat(exception.getCause()).isInstanceOf(NullPointerException.class);
+    }
+
+    @Test
+    void createCategory_予期せぬExceptionが発生する場合_RuntimeExceptionをスローする() {
+        // Arrange
+        CategoryCreateRequest request = new CategoryCreateRequest();
+        request.setName("新しいカテゴリ");
+
+        // DB検索時に汎用的な例外が発生するよう設定
+        when(categoryRepository.findByUserIdInAndDeletedFalse(any(List.class)))
+                .thenThrow(new RuntimeException("テスト用の予期せぬエラー"));
+
+        // Act & Assert
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            categoryService.createCategory(request, testUserId);
+        });
+
+        // メッセージの内容と、原因となった例外の型を検証
+        assertThat(exception.getMessage()).isEqualTo("予期せぬエラーが発生しました");
+    }
+  
     /**
      * GET /categories のテスト
      */
@@ -210,4 +249,3 @@ public class CategoryServiceTest {
 //                .findByUserIdAndDeletedFalseOrUserIdAndDeletedFalse(testUserId, testSystemUserId);
 //    }
 }
-
