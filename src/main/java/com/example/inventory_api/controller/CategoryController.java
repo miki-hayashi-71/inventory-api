@@ -48,15 +48,8 @@ public class CategoryController {
         //  TODO:認証機能実装後、実際のuserIdに置き換える
         String currentUserId = "user1";
 
-        List<Category> categories = categoryService.getCategoryList(currentUserId);
-        return categories.stream()
-                .map(category -> {
-                    CategoryResponse res = new CategoryResponse();
-                    res.setId(category.getId());
-                    res.setName(category.getName());
-                    return res;
-                })
-                .collect(Collectors.toList());
+        // serviceからResponseのリストを受け取って返す
+        return categoryService.getCategoryList(currentUserId);
     }
 
     /**

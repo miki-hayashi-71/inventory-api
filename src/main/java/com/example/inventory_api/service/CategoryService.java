@@ -1,16 +1,21 @@
 package com.example.inventory_api.service;
 
 import com.example.inventory_api.controller.dto.CategoryCreateRequest;
+import com.example.inventory_api.controller.dto.CategoryResponse;
 import com.example.inventory_api.controller.dto.CategoryUpdateRequest;
 import com.example.inventory_api.domain.model.Category;
 import com.example.inventory_api.domain.repository.CategoryRepository;
+import com.ibm.icu.text.Collator;
+import com.ibm.icu.util.ULocale;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -76,6 +81,29 @@ public class CategoryService {
         } catch (Exception e) {
             throw new RuntimeException(UNEXPECTED_ERROR_MESSAGE, e);
         }
+    }
+
+    /**
+      カスタムカテゴリの一覧を取得
+      GET /categories
+      */
+    public List<CategoryResponse> getCategoryList(String userId) {
+        // DBからカスタムカテゴリとデフォルトカテゴリを取得する
+        List<Category> categories = categoryRepository.findByUserIdAndDeletedFalseOrUserIdAndDeletedFalse(userId, SYSTEM_USER_ID);
+
+        // 日本語の辞書順でソートするためのCollatorを準備
+        Collator collator = Collator.getInstance(ULocale.JAPANESE);
+
+        // ソートしてレスポンスに変換する
+        return categories.stream()
+                .sorted(Comparator.comparing(Category::getName, collator))
+                .map(category -> {
+                    CategoryResponse res = new CategoryResponse();
+                    res.setId(category.getId());
+                    res.setName(category.getName());
+                    return res;
+                })
+                .collect(Collectors.toList());
     }
 
     /**
