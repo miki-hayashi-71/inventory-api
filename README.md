@@ -8,3 +8,7 @@
 - [画面遷移図](https://github.com/miki-hayashi-71/inventory-api/blob/main/doc/screen_transition.pdf)
 - [シーケンス図](https://github.com/miki-hayashi-71/inventory-api/blob/main/doc/sequence.md)
 
+### ショートカット
+- [Controller](https://github.com/miki-hayashi-71/inventory-api/blob/main/src/main/java/com/example/inventory_api/controller/CategoryController.java)
+- [Repository](https://github.com/miki-hayashi-71/inventory-api/blob/main/src/main/java/com/example/inventory_api/domain/repository/CategoryRepository.java)
+- [Service](https://github.com/miki-hayashi-71/inventory-api/blob/main/src/main/java/com/example/inventory_api/service/CategoryService.java)
