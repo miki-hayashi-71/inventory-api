@@ -34,6 +34,11 @@ public interface CategoryRepository extends JpaRepository<Category, Integer> {
      * @param systemUserId システムユーザーのID
      * @return ログインユーザーの未削除カテゴリと、システムの未削除カテゴリの合算リスト
      */
-    @Query(value = "SELECT * FROM categories WHERE user_id IN (:userId, :systemUserId) AND deleted = false", nativeQuery = true)
-    List<Category> findDefaultAndSystemCategories(@Param("userId") String userId, @Param("systemUserId") String systemUserId);
+    @Query(value = """
+               SELECT *
+               FROM categories
+               WHERE user_id IN (:userId, :systemUserId)
+               AND deleted = false
+               """, nativeQuery = true)
+    List<Category> findUserCategories(@Param("userId") String userId, @Param("systemUserId") String systemUserId);
 }
