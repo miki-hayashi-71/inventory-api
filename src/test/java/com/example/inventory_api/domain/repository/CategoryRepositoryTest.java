@@ -24,16 +24,16 @@ public class CategoryRepositoryTest {
      * POST /categories のテスト
      */
     @Test
-    void findByNameAndUserId_指定した名称とユーザーIDのカテゴリが存在する場合_そのカテゴリを返す() {
+    void findByNameAndUserIdAndDeletedFalse_未削除のカテゴリが存在する場合_そのカテゴリを返す() {
         // Arrange
-        Category category = new Category();
-        category.setName("テストカテゴリ");
-        category.setUserId(testUserId);
-        category.setDeleted(false);
-        categoryRepository.save(category);
+        Category testCategory = new Category();
+        testCategory.setName("テストカテゴリ");
+        testCategory.setUserId(testUserId);
+        testCategory.setDeleted(false);  // 削除されていない
+        categoryRepository.save(testCategory);
 
         // Act
-        List<Category> result = categoryRepository.findByNameAndUserId("テストカテゴリ", testUserId);
+        List<Category> result = categoryRepository.findByNameAndUserIdAndDeletedFalse("テストカテゴリ", testUserId);
 
         // Assert
         assertThat(result).hasSize(1);
@@ -41,42 +41,58 @@ public class CategoryRepositoryTest {
     }
 
     @Test
-    void findByUerIdAndDeletedFalse_指定したユーザーIDリストに紐づく見削除カテゴリのみを返す() {
+    void findByNameAndUserIdAndDeletedFalse_削除済みのカテゴリしか存在しない場合_空のリストを返す() {
+        // Arrange
+        Category deletedCategory = new Category();
+        deletedCategory.setName("テストカテゴリ");
+        deletedCategory.setUserId(testUserId);
+        deletedCategory.setDeleted(true); // 削除済み
+        categoryRepository.save(deletedCategory);
+
+        // Act
+        List<Category> result = categoryRepository.findByNameAndUserIdAndDeletedFalse("テストカテゴリ", testUserId);
+
+        // Assert
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    void findByUerIdAndDeletedFalse_指定したユーザーIDリストに紐づく未削除カテゴリのみを返す() {
         // Arrange
         // 1. テストユーザーのカテゴリ (取得対象)
-        Category c1 = new Category();
-        c1.setName("カテゴリ1");
-        c1.setUserId(testUserId);
-        c1.setDeleted(false);
-        categoryRepository.save(c1);
+        Category testUserCategory = new Category();
+        testUserCategory.setName("カテゴリ1");
+        testUserCategory.setUserId(testUserId);
+        testUserCategory.setDeleted(false);
+        categoryRepository.save(testUserCategory);
 
         // 2. システムユーザーのカテゴリ (取得対象)
-        Category c2 = new Category();
-        c2.setName("カテゴリ2");
-        c2.setUserId(systemUserId);
-        c2.setDeleted(false);
-        categoryRepository.save(c2);
+        Category systemCategory = new Category();
+        systemCategory.setName("カテゴリ2");
+        systemCategory.setUserId(systemUserId);
+        systemCategory.setDeleted(false);
+        categoryRepository.save(systemCategory);
 
         // 3. テストユーザーの削除済みカテゴリ (取得対象外)
-        Category c3_deleted = new Category();
-        c3_deleted.setName("カテゴリ3");
-        c3_deleted.setUserId(testUserId);
-        c3_deleted.setDeleted(true);
-        categoryRepository.save(c3_deleted);
+        Category deletedCategory = new Category();
+        deletedCategory.setName("カテゴリ3");
+        deletedCategory.setUserId(testUserId);
+        deletedCategory.setDeleted(true);
+        categoryRepository.save(deletedCategory);
 
         // 4. 別のユーザーのカテゴリ (取得対象外)
-        Category c4_anotherUser = new Category();
-        c4_anotherUser.setName("カテゴリ4");
-        c4_anotherUser.setUserId(anotherUserId);
-        c4_anotherUser.setDeleted(false);
-        categoryRepository.save(c4_anotherUser);
+        Category anotherUserCategory = new Category();
+        anotherUserCategory.setName("カテゴリ4");
+        anotherUserCategory.setUserId(anotherUserId);
+        anotherUserCategory.setDeleted(false);
+        categoryRepository.save(anotherUserCategory);
 
         // Act
         List<String> userIdsToSearch = List.of(testUserId, systemUserId);
         List<Category> result = categoryRepository.findByUserIdInAndDeletedFalse(userIdsToSearch);
 
         // Assert
-        assertThat(result).hasSize(2); // c1 と c2 の2件が取得されるはず
+        assertThat(result).hasSize(2);
         assertThat(result).extracting(Category::getName).containsExactlyInAnyOrder("カテゴリ1", "カテゴリ2");
     }
 }

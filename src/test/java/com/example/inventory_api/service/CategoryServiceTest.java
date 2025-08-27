@@ -3,12 +3,14 @@ package com.example.inventory_api.service;
 import com.example.inventory_api.controller.dto.CategoryCreateRequest;
 import com.example.inventory_api.domain.model.Category;
 import com.example.inventory_api.domain.repository.CategoryRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataAccessResourceFailureException;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,7 +30,11 @@ public class CategoryServiceTest {
     private CategoryRepository categoryRepository;
 
     private final String testUserId = "user1";
-    private final String testSystemUserId = "system";
+
+    @BeforeEach
+    void setUp() {
+        ReflectionTestUtils.setField(categoryService, "maxCustomCategoryLimit", 50);
+    }
 
     /**
      * POST /categories のテスト
@@ -81,17 +87,17 @@ public class CategoryServiceTest {
         request.setName("51個目のカスタムカテゴリ");
 
         // 50件登録済みのリストを作成
-        List<Category> fullList = new ArrayList<>();
+        List<Category> fullCategoryList = new ArrayList<>();
         for (int i = 0; i < 50; i++) {
             Category c = new Category();
             c.setUserId(testUserId);
             c.setName("カテゴリ" + i);
-            fullList.add(c);
+            fullCategoryList.add(c);
         }
 
         // repositoryが50件のリストを返すよう設定
         when(categoryRepository.findByUserIdInAndDeletedFalse(any(List.class)))
-                .thenReturn(fullList);
+                .thenReturn(fullCategoryList);
 
         // Act and Assert
         assertThrows(IllegalStateException.class, () -> {
@@ -108,17 +114,17 @@ public class CategoryServiceTest {
         request.setName("50個目のカスタムカテゴリ");
 
         // 50件登録済みのリストを作成
-        List<Category> fullList = new ArrayList<>();
-        for (int i = 0; i < 29; i++) {
+        List<Category> fullCategoryList = new ArrayList<>();
+        for (int i = 0; i < 49; i++) {
             Category c = new Category();
             c.setUserId(testUserId);
             c.setName("カテゴリ" + i);
-            fullList.add(c);
+            fullCategoryList.add(c);
         }
 
         // repositoryが50件のリストを返すよう設定
         when(categoryRepository.findByUserIdInAndDeletedFalse(any(List.class)))
-                .thenReturn(fullList);
+                .thenReturn(fullCategoryList);
         when(categoryRepository.save(any(Category.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -152,5 +158,43 @@ public class CategoryServiceTest {
             categoryService.createCategory(request, testUserId);
         });
     }
-}
 
+    @Test
+    void createCategory_DB検索時にNullPointerExceptionが発生する場合_RuntimeExceptionをスローする() {
+        // Arrange
+        CategoryCreateRequest request = new CategoryCreateRequest();
+        request.setName("新しいカテゴリ");
+
+        // DB検索時にNullPointerExceptionが発生するよう設定
+        when(categoryRepository.findByUserIdInAndDeletedFalse(any(List.class)))
+                .thenThrow(new NullPointerException("テスト用のエラー"));
+
+        // Act & Assert
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            categoryService.createCategory(request, testUserId);
+        });
+
+        // メッセージの内容と、原因となった例外の型を検証
+        assertThat(exception.getMessage()).isEqualTo("予期せぬエラーが発生しました");
+        assertThat(exception.getCause()).isInstanceOf(NullPointerException.class);
+    }
+
+    @Test
+    void createCategory_予期せぬExceptionが発生する場合_RuntimeExceptionをスローする() {
+        // Arrange
+        CategoryCreateRequest request = new CategoryCreateRequest();
+        request.setName("新しいカテゴリ");
+
+        // DB検索時に汎用的な例外が発生するよう設定
+        when(categoryRepository.findByUserIdInAndDeletedFalse(any(List.class)))
+                .thenThrow(new RuntimeException("テスト用の予期せぬエラー"));
+
+        // Act & Assert
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            categoryService.createCategory(request, testUserId);
+        });
+
+        // メッセージの内容と、原因となった例外の型を検証
+        assertThat(exception.getMessage()).isEqualTo("予期せぬエラーが発生しました");
+    }
+}
