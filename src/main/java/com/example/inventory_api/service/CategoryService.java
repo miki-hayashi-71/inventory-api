@@ -98,13 +98,9 @@ public class CategoryService {
             // ソートしてレスポンスに変換する
             return categories.stream()
                     .sorted(Comparator.comparing(Category::getName, collator))
-                    .map(category -> {
-                        CategoryResponse res = new CategoryResponse();
-                        res.setId(category.getId());
-                        res.setName(category.getName());
-                        return res;
-                    })
+                    .map(category -> new CategoryResponse(category.getId(), category.getName()))
                     .collect(Collectors.toList());
+
         } catch (DataAccessException e) {
             throw new RuntimeException(DATABASE_ACCESS_FAILURE_MESSAGE, e);
         } catch (Exception e) {
