@@ -40,5 +40,8 @@ public interface CategoryRepository extends JpaRepository<Category, Integer> {
                WHERE user_id IN (:userId, :systemUserId)
                AND deleted = false
                """, nativeQuery = true)
-    List<Category> findUserCategories(@Param("userId") String userId, @Param("systemUserId") String systemUserId);
+    List<Category> findUserCategories(
+            @Param("userId") String userId,
+            @Param("systemUserId") String systemUserId
+    );
 }
