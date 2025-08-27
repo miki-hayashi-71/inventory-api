@@ -6,8 +6,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
-import java.util.Optional;
-import java.util.Optional;
 
 // Categoryエンティティとやり取りを行うリポジトリ（インターフェース）
 public interface CategoryRepository extends JpaRepository<Category, Integer> {
@@ -36,12 +34,11 @@ public interface CategoryRepository extends JpaRepository<Category, Integer> {
      * @param systemUserId システムユーザーのID
      * @return ログインユーザーの未削除カテゴリと、システムの未削除カテゴリの合算リスト
      */
-    @Query(value = "SELECT * FROM categories WHERE user_id IN (:userId, :systemUserId) AND deleted = false", nativeQuery = true)
-    List<Category> findDefaultAndSystemCategories(@Param("userId") String userId, @Param("systemUserId") String systemUserId);
-
-    // 指定したnameとuserIdを持つ削除されていないカテゴリを検索
-    Optional<Category> findByNameAndUserIdAndDeletedFalse(String name, String userId);
-
-    // 指定したnameに一致するカテゴリを、ユーザーIDリストの中から検索
-    List<Category> findByNameAndUserIdInAndDeletedFalse(String name, List<String> userIds);
+    @Query(value = """
+               SELECT *
+               FROM categories
+               WHERE user_id IN (:userId, :systemUserId)
+               AND deleted = false
+               """, nativeQuery = true)
+    List<Category> findUserCategories(@Param("userId") String userId, @Param("systemUserId") String systemUserId);
 }
