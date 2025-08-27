@@ -16,6 +16,8 @@ public class CustomExceptionHandler {
     // Service層で定義するエラーメッセージの接頭辞
     private static final String DUPLICATE_PREFIX = "DUPLICATE:";
     private static final String LIMIT_PREFIX = "LIMIT:";
+    private static final String NOT_FOUND_PREFIX = "NOT_FOUND:";
+    private static final String FORBIDDEN_PREFIX = "FORBIDDEN:";
 
     // エラーメッセージを定数化
     private static final String MSG_VALIDATION_ERROR = "不正なリクエストです";
@@ -77,12 +79,12 @@ public class CustomExceptionHandler {
             ErrorResponse errorResponse = new ErrorResponse("CATEGORY_LIMIT_EXCEEDED", message.substring(LIMIT_PREFIX.length()));
             return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST); // 400
         }
-        if (message.startsWith("NOT_FOUND:")) {
+        if (message.startsWith(NOT_FOUND_PREFIX)) {
             ErrorResponse errorResponse = new ErrorResponse("NOT_FOUND_ERROR", message.substring(10));
             return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND); // 404
         }
-        if (message.startsWith("FORBIDDEN:")) {
-            ErrorResponse errorResponse = new ErrorResponse("FORBIDDEN_ERROR", message.substring(10));
+        if (message.startsWith(FORBIDDEN_PREFIX)) {
+            ErrorResponse errorResponse = new ErrorResponse("DEFAULT_CATEGORY_IMMUTABLE", message.substring(10));
             return new ResponseEntity<>(errorResponse, HttpStatus.FORBIDDEN); // 403
         }
 

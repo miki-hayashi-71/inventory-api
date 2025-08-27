@@ -30,12 +30,20 @@ public class CategoryService {
     // システムユーザー（仮）
     private static final String SYSTEM_USER_ID = "system";
 
-    // エラーメッセージを定数で管理
+    // --エラーメッセージを定数で管理--
     // TODO: メッセージ用のプロパティファイルを用意したい（https://github.com/miki-hayashi-71/inventory-api/pull/18#discussion_r2299559046）
-    private static final String VALID_DUPLICATE_MESSAGE = "DUPLICATE:そのカテゴリ名は既に使用されています";
-    private static final String VALID_LIMIT_MESSAGE = "LIMIT:登録できるカテゴリの上限に達しています";
-    private static final String DATABASE_ACCESS_FAILURE_MESSAGE = "データベースへの保存に失敗しました";
-    private static final String UNEXPECTED_ERROR_MESSAGE = "予期せぬエラーが発生しました";
+    // creteCategory用
+    private static final String MSG_DUPLICATE_CREATE = "DUPLICATE:そのカテゴリ名は既に使用されています";
+    private static final String MSG_LIMIT_CREATE = "LIMIT:登録できるカテゴリの上限に達しています";
+
+    // updateCategory用
+    private static final String MSG_NOT_FOUND_UPDATE = "NOT_FOUND:該当のカテゴリが見つかりません";
+    private static final String MSG_FORBIDDEN_UPDATE = "FORBIDDEN:デフォルトカテゴリは編集できません";
+    private static final String MSG_DUPLICATE_UPDATE = "DUPLICATE:そのカテゴリ名は既に使用されています";
+
+    // 共通
+    private static final String MSG_DB_ACCESS_ERROR = "データベースへの保存に失敗しました";
+    private static final String MSG_UNEXPECTED_ERROR = "予期せぬエラーが発生しました";
 
     /**
      * 新しいカスタムカテゴリを1件登録
@@ -53,7 +61,7 @@ public class CategoryService {
             boolean isDuplicate = existingCategories.stream()
                     .anyMatch(category -> category.getName().equals(request.getName()));
             if (isDuplicate) {
-                throw new IllegalStateException(VALID_DUPLICATE_MESSAGE);
+                throw new IllegalStateException(MSG_DUPLICATE_CREATE);
             }
 
             // 取得したリストからカスタムカテゴリの上限チェック
@@ -61,7 +69,7 @@ public class CategoryService {
                     .filter(category -> category.getUserId().equals(userId))
                     .count();
             if (userCategoryCount >= maxCustomCategoryLimit) {
-                throw new IllegalStateException(VALID_LIMIT_MESSAGE);
+                throw new IllegalStateException(MSG_LIMIT_CREATE);
             }
 
             // 新しいカテゴリを作成して保存
@@ -75,11 +83,11 @@ public class CategoryService {
         } catch (IllegalStateException e) {
             throw e;
         } catch (DataAccessException e) {
-            throw new RuntimeException(DATABASE_ACCESS_FAILURE_MESSAGE, e);
+            throw new RuntimeException(MSG_DB_ACCESS_ERROR, e);
         } catch (NullPointerException | IllegalArgumentException e) {  // TODO: 例外パターンを追加する
-            throw new RuntimeException(UNEXPECTED_ERROR_MESSAGE, e);
+            throw new RuntimeException(MSG_UNEXPECTED_ERROR, e);
         } catch (Exception e) {
-            throw new RuntimeException(UNEXPECTED_ERROR_MESSAGE, e);
+            throw new RuntimeException(MSG_UNEXPECTED_ERROR, e);
         }
     }
 
@@ -102,9 +110,9 @@ public class CategoryService {
                     .collect(Collectors.toList());
 
         } catch (DataAccessException e) {
-            throw new RuntimeException(DATABASE_ACCESS_FAILURE_MESSAGE, e);
+            throw new RuntimeException(MSG_DB_ACCESS_ERROR, e);
         } catch (Exception e) {
-            throw new RuntimeException(UNEXPECTED_ERROR_MESSAGE, e);
+            throw new RuntimeException(MSG_UNEXPECTED_ERROR, e);
         }
     }
 
@@ -114,35 +122,40 @@ public class CategoryService {
      */
     @Transactional
     public Category updateCategory(Integer categoryId, CategoryUpdateRequest request, String userId) {
-        // 更新対象のカテゴリをDBから取得
-        Category categoryToUpdate = categoryRepository.findById(categoryId)
-                .orElseThrow(() -> new IllegalStateException("NOT_FOUND:該当のカテゴリが見つかりません"));
-
-        // 編集権限(デフォルトカテゴリでないか）をチェック
-        if (SYSTEM_USER_ID.equals(categoryToUpdate.getUserId())) {
-            throw new IllegalStateException("FORBIDDEN:デフォルトカテゴリは編集できません");
-        }
-        // 編集権限（自分以外のカテゴリでないか）をチェック
-        if (!categoryToUpdate.getUserId().equals(userId)) {
-            throw new IllegalStateException("FORBIDDEN:このカテゴリを編集する権限がありません");
-        }
-
-        // カテゴリ名の重複チェック
-        List<String> userIdsToCheck = List.of(userId, SYSTEM_USER_ID);
-        List<Category> duplicates = categoryRepository.findByNameAndUserIdInAndDeletedFalse(request.getName(), userIdsToCheck);
-
-        // 取得したリストの中に、更新したいカテゴリ以外のカテゴリが含まれていればエラー
-        if (duplicates.stream().anyMatch(c -> !c.getId().equals(categoryId))) {
-            throw new IllegalStateException("DUPLICATE:そのカテゴリ名は既に使用されています");
-        }
-
-        // カテゴリ名を更新
-        categoryToUpdate.setName(request.getName());
-
         try {
+            // DBからログインユーザー、システムユーザーのカテゴリをまとめて取得
+            List<Category> categories = categoryRepository.findUserCategories(userId, SYSTEM_USER_ID);
+
+            // カテゴリ名の重複チェック
+            boolean isDuplicate = categories.stream()
+                    .anyMatch(c -> c.getName().equals(request.getName()) && !c.getId().equals(categoryId));
+            if (isDuplicate) {
+                throw new IllegalStateException(MSG_DUPLICATE_UPDATE);
+            }
+
+            // 更新対象のカテゴリを探す
+            Category categoryToUpdate = categories.stream()
+                    .filter(category -> category.getId().equals(categoryId))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalStateException(MSG_NOT_FOUND_UPDATE));
+
+            // 権限チェック
+            if (!categoryToUpdate.getUserId().equals(userId)) {
+                throw new IllegalStateException(MSG_FORBIDDEN_UPDATE);
+            }
+
+            categoryToUpdate.setName(request.getName());
             return categoryRepository.save(categoryToUpdate);
+
+        } catch (IllegalStateException e) {
+            throw e;
         } catch (DataAccessException e) {
-            throw new RuntimeException("データベースへの保存に失敗しました", e);
+            throw new RuntimeException(MSG_DB_ACCESS_ERROR, e);
+        } catch (NullPointerException e) {  // TODO: 例外パターンを追加する
+            throw new RuntimeException(MSG_UNEXPECTED_ERROR, e);
+        } catch (Exception e) {
+            throw new RuntimeException(MSG_UNEXPECTED_ERROR, e);
         }
+
     }
 }

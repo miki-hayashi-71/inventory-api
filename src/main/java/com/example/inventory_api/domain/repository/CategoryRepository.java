@@ -25,11 +25,12 @@ public interface CategoryRepository extends JpaRepository<Category, Integer> {
      * @param userIds ユーザーIDのリスト
      * @return 条件に一致するカテゴリのリスト
      */
-    // TODO: SQLでの取得に変更したい
+    // TODO: createで使ってるけど、やってることはgetやupdateと一緒なので、これを削除してfindUserCategoriesに一本化できる
     List<Category> findByUserIdInAndDeletedFalse(List<String> userIds);
 
     /**
      * ログインユーザーのカスタムカテゴリと、システムのデフォルトカテゴリの一覧を取得
+     * getCategoryList, updateCategoryで使用
      * @param userId       ログインユーザーのID
      * @param systemUserId システムユーザーのID
      * @return ログインユーザーの未削除カテゴリと、システムの未削除カテゴリの合算リスト
