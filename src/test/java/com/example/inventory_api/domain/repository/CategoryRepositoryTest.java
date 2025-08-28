@@ -20,6 +20,9 @@ public class CategoryRepositoryTest {
     private final String anotherUserId = "user2";
     private final String systemUserId = "system";
 
+    /**
+     * findByNameAndUserIdAndDeletedFalse のテスト
+     */
     @Test
     void findByNameAndUserIdAndDeletedFalse_未削除のカテゴリが存在する場合_そのカテゴリを返す() {
         // Arrange
@@ -91,5 +94,38 @@ public class CategoryRepositoryTest {
         // Assert
         assertThat(result).hasSize(2);
         assertThat(result).extracting(Category::getName).containsExactlyInAnyOrder("カテゴリ1", "カテゴリ2");
+    }
+
+    /**
+     * findUserCategories のテスト
+     */
+    @Test
+    void findUserCategories_カスタムカテゴリとデフォルトカテゴリを併せて取得する() {
+        // Arrange
+        categoryRepository.save(new Category(testUserId, "カスタムカテゴリ", false));
+        categoryRepository.save(new Category(systemUserId, "デフォルトカテゴリ", false));
+        categoryRepository.save(new Category(testUserId, "削除済みカテゴリ", true));
+        categoryRepository.save(new Category(anotherUserId, "他のユーザーのカテゴリ", false));
+
+        // Act
+        List<Category> result = categoryRepository.findUserCategories(testUserId, systemUserId);
+
+        // Assert ここではソートは求めない
+        assertThat(result).hasSize(2);
+        assertThat(result).extracting(Category::getName)
+                .containsExactlyInAnyOrder("カスタムカテゴリ", "デフォルトカテゴリ");
+    }
+
+    @Test
+    void findUserCategories_該当カテゴリが存在しない場合_空のリストを返す() {
+        // Arrange
+        categoryRepository.save(new Category(anotherUserId, "他のユーザーのカテゴリ", false));
+        categoryRepository.save(new Category(testUserId, "検索対象ユーザーの削除済みカテゴリ", true));
+
+        // Act
+        List<Category> result = categoryRepository.findUserCategories(testUserId, systemUserId);
+
+        // Assert  nullではなく、要素数0のリストを確認
+        assertThat(result).isNotNull().isEmpty();
     }
 }

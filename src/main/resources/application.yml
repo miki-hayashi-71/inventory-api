@@ -14,6 +14,11 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: true
+  mvc:
+    throw-exception-if-no-handler-found: true
+  web:
+    resources:
+      add-mappings: false
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
