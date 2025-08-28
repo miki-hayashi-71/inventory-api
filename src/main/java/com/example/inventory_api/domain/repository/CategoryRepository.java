@@ -30,7 +30,6 @@ public interface CategoryRepository extends JpaRepository<Category, Integer> {
 
     /**
      * ログインユーザーのカスタムカテゴリと、システムのデフォルトカテゴリの一覧を取得
-     * getCategoryList, updateCategoryで使用
      * @param userId       ログインユーザーのID
      * @param systemUserId システムユーザーのID
      * @return ログインユーザーの未削除カテゴリと、システムの未削除カテゴリの合算リスト
@@ -41,5 +40,8 @@ public interface CategoryRepository extends JpaRepository<Category, Integer> {
                WHERE user_id IN (:userId, :systemUserId)
                AND deleted = false
                """, nativeQuery = true)
-    List<Category> findUserCategories(@Param("userId") String userId, @Param("systemUserId") String systemUserId);
+    List<Category> findUserCategories(
+            @Param("userId") String userId,
+            @Param("systemUserId") String systemUserId
+    );
 }

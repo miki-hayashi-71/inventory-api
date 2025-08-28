@@ -156,6 +156,5 @@ public class CategoryService {
         } catch (Exception e) {
             throw new RuntimeException(MSG_UNEXPECTED_ERROR, e);
         }
-
     }
 }

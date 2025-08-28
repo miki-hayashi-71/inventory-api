@@ -1,6 +1,7 @@
 package com.example.inventory_api.service;
 
 import com.example.inventory_api.controller.dto.CategoryCreateRequest;
+import com.example.inventory_api.controller.dto.CategoryResponse;
 import com.example.inventory_api.domain.model.Category;
 import com.example.inventory_api.domain.repository.CategoryRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,9 +14,11 @@ import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -30,6 +33,7 @@ public class CategoryServiceTest {
     private CategoryRepository categoryRepository;
 
     private final String testUserId = "user1";
+    private final String testSystemUserId = "system";
 
     @BeforeEach
     void setUp() {
@@ -37,7 +41,7 @@ public class CategoryServiceTest {
     }
 
     /**
-     * POST /categories のテスト
+     * createCategory のテスト
      */
     @Test
     void createCategory_正常なリクエストの場合_カテゴリが作成される() {
@@ -159,53 +163,105 @@ public class CategoryServiceTest {
         });
     }
 
+    @Test
+    void createCategory_DB検索時にNullPointerExceptionが発生する場合_RuntimeExceptionをスローする() {
+        // Arrange
+        CategoryCreateRequest request = new CategoryCreateRequest();
+        request.setName("新しいカテゴリ");
+
+        // DB検索時にNullPointerExceptionが発生するよう設定
+        when(categoryRepository.findByUserIdInAndDeletedFalse(any(List.class)))
+                .thenThrow(new NullPointerException("テスト用のエラー"));
+
+        // Act & Assert
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            categoryService.createCategory(request, testUserId);
+        });
+
+        // メッセージの内容と、原因となった例外の型を検証
+        assertThat(exception.getMessage()).isEqualTo("予期せぬエラーが発生しました");
+        assertThat(exception.getCause()).isInstanceOf(NullPointerException.class);
+    }
+
+    @Test
+    void createCategory_予期せぬExceptionが発生する場合_RuntimeExceptionをスローする() {
+        // Arrange
+        CategoryCreateRequest request = new CategoryCreateRequest();
+        request.setName("新しいカテゴリ");
+
+        // DB検索時に汎用的な例外が発生するよう設定
+        when(categoryRepository.findByUserIdInAndDeletedFalse(any(List.class)))
+                .thenThrow(new RuntimeException("テスト用の予期せぬエラー"));
+
+        // Act & Assert
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            categoryService.createCategory(request, testUserId);
+        });
+
+        // メッセージの内容と、原因となった例外の型を検証
+        assertThat(exception.getMessage()).isEqualTo("予期せぬエラーが発生しました");
+    }
+  
     /**
-     * GET /categories のテスト
+     * getCategoryList のテスト
      */
-//    @Test
-//    void getCategoryList_リポジトリから取得したカテゴリリストを辞書順で返す() {
-//        // Arrange
-//        String testUserId = "user1";
-//        String testSystemUserId = "system";
-//
-//        // 辞書順ではないリストを作成
-//        Category category1 = new Category();
-//        category1.setName("玄関");
-//
-//        Category category2 = new Category();
-//        category2.setName("リビング・ダイニング");
-//
-//        Category category3 = new Category();
-//        category3.setName("寝室");
-//
-//        Category category4 = new Category();
-//        category4.setName("BathRoom");
-//
-//        Category category5 = new Category();
-//        category5.setName("といれ");
-//
-//        List<Category> unsortedList = new ArrayList<>();
-//        unsortedList.add(category1);
-//        unsortedList.add(category2);
-//        unsortedList.add(category3);
-//        unsortedList.add(category4);
-//        unsortedList.add(category5);
-//
-//        when(categoryRepository.findByUserIdAndDeletedFalseOrUserIdAndDeletedFalse(testUserId, testSystemUserId))
-//                .thenReturn(unsortedList);
-//
-//        // Act
-//        List<Category> result = categoryService.getCategoryList(testUserId);
-//
-//        // Assert
-//        assertThat(result).hasSize(5);
-//        assertThat(result.get(0).getName()).isEqualTo("BathRoom"); // アルファベット「B」
-//        assertThat(result.get(1).getName()).isEqualTo("といれ"); // ひらがな・カタカナ「と」
-//        assertThat(result.get(2).getName()).isEqualTo("リビング・ダイニング"); // ひらがな・カタカナ「リ」
-//        assertThat(result.get(3).getName()).isEqualTo("玄関"); // 漢字「読み：げ」
-//        assertThat(result.get(4).getName()).isEqualTo("寝室"); // 漢字「読み：し」
-//
-//        verify(categoryRepository, times(1))
-//                .findByUserIdAndDeletedFalseOrUserIdAndDeletedFalse(testUserId, testSystemUserId);
-//    }
+    @Test
+    void getCategoryList_リポジトリから取得したカテゴリリストを辞書順で返す() {
+        // Arrange
+        List<Category> unsortedList = Arrays.asList(
+                new Category(1, testUserId, "玄関", false),
+                new Category(2, testUserId, "リビング・ダイニング", false),
+                new Category(3, testUserId, "寝室", false),
+                new Category(4, testUserId, "BathRoom", false),
+                new Category(5, testUserId, "といれ", false)
+        );
+
+        when(categoryRepository.findUserCategories(testUserId, testSystemUserId)).
+                thenReturn(unsortedList);
+
+        // Act
+        List<CategoryResponse> result = categoryService.getCategoryList(testUserId);
+
+        // Assert
+        assertThat(result).hasSize(5);
+
+        assertThat(result.get(0).getName()).isEqualTo("BathRoom");
+        assertThat(result.get(1).getName()).isEqualTo("といれ");
+        assertThat(result.get(2).getName()).isEqualTo("リビング・ダイニング");
+        assertThat(result.get(3).getName()).isEqualTo("玄関");
+        assertThat(result.get(4).getName()).isEqualTo("寝室");
+
+        assertThat(result.get(0).getId()).isEqualTo(4);
+        assertThat(result.get(1).getId()).isEqualTo(5);
+        assertThat(result.get(2).getId()).isEqualTo(2);
+        assertThat(result.get(3).getId()).isEqualTo(1);
+        assertThat(result.get(4).getId()).isEqualTo(3);
+
+        verify(categoryRepository, times(1))
+                .findUserCategories(testUserId, testSystemUserId);
+    }
+
+    @Test
+    void getCategoryList_DB検索時にエラーが発生する場合_RuntimeExceptionをスローする() {
+        // Arrange
+        when(categoryRepository.findUserCategories(anyString(), anyString()))
+                .thenThrow(new DataAccessResourceFailureException("DB接続エラー"));
+
+        // Act & Assert
+        assertThatThrownBy(() -> categoryService.getCategoryList(testUserId))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessage("データベースへの保存に失敗しました");
+    }
+
+    @Test
+    void getCategoryList_予期せぬExceptionが発生する場合_RuntimeExceptionをスローする() {
+        // Arrange
+        when(categoryRepository.findUserCategories(anyString(), anyString()))
+                .thenThrow(new RuntimeException("予期せぬエラー"));
+
+        // Act & Assert
+        assertThatThrownBy(() -> categoryService.getCategoryList(testUserId))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessage("予期せぬエラーが発生しました");
+    }
 }

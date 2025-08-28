@@ -2,6 +2,7 @@ package com.example.inventory_api.controller;
 
 import com.example.inventory_api.controller.advice.CustomExceptionHandler;
 import com.example.inventory_api.controller.dto.CategoryCreateRequest;
+import com.example.inventory_api.controller.dto.CategoryResponse;
 import com.example.inventory_api.domain.model.Category;
 import com.example.inventory_api.service.CategoryService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -12,6 +13,11 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.Collections;
+import java.util.List;
+
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
@@ -32,7 +38,7 @@ public class CategoryControllerTest {
     private CategoryService categoryService;
 
     /**
-     * POST /categories のテスト
+     * createCategory のテスト
      */
     @Test
     void createCategory_正常系_201Createdと作成されたカテゴリ情報を返す() throws Exception {
@@ -142,31 +148,50 @@ public class CategoryControllerTest {
     }
 
     /**
-     * GET /categories のテスト
+     * getCategoryList のテスト
      */
-//    @Test
-//    void getCategoryList_正常系_200OKとカテゴリリストを返す() throws Exception {
-//        // Arrange
-//        Category category1 = new Category();
-//        category1.setId(1);
-//        category1.setName("テストカテゴリ1");
-//
-//        Category category2 = new Category();
-//        category2.setId(2);
-//        category2.setName("テストカテゴリ2");
-//
-//        List<Category> categoryList = List.of(category1, category2);
-//
-//        when(categoryService.getCategoryList(anyString()))
-//                .thenReturn(categoryList);
-//
-//        // Act & Assert
-//        mockmvc.perform(get("/categories"))
-//                .andExpect(status().isOk())
-//                .andExpect(jsonPath("$", hasSize(2)))
-//                .andExpect(jsonPath("$[0].id").value(1))
-//                .andExpect(jsonPath("$[0].name").value("テストカテゴリ1"))
-//                .andExpect(jsonPath("$[1].id").value(2))
-//                .andExpect(jsonPath("$[1].name").value("テストカテゴリ2"));
-//    }
+    @Test
+    void getCategoryList_正常系_200OKとカテゴリリストを返す() throws Exception {
+        // Arrange ここでソートは行っていない
+        List<CategoryResponse> categoryList = List.of(
+                new CategoryResponse(1, "キッチン"),
+                new CategoryResponse(2, "リビング")
+        );
+        when(categoryService.getCategoryList(anyString()))
+                .thenReturn(categoryList);
+
+        // Act & Assert
+        mockmvc.perform(get("/categories"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[0].id", is(1)))
+                .andExpect(jsonPath("$[0].name", is("キッチン")))
+                .andExpect(jsonPath("$[1].id", is(2)))
+                .andExpect(jsonPath("$[1].name", is("リビング")));
+    }
+
+    @Test
+    void getCategoryList_カテゴリが存在しない場合_200OKと空のリストを返す() throws Exception {
+        // Arrange
+        when(categoryService.getCategoryList(anyString()))
+                .thenReturn(Collections.emptyList());
+
+        // Act & Assert
+        mockmvc.perform(get("/categories"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(0)));
+    }
+
+    @Test
+    void getCategoryList_Service層で予期せぬエラーが発生した場合_500InternalServerErrorを返す() throws Exception {
+        // Arrange
+        when(categoryService.getCategoryList(anyString()))
+                .thenThrow(new RuntimeException("予期せぬエラー"));
+
+        // Act & Assert
+        mockmvc.perform(get("/categories"))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.code", is("INTERNAL_SERVER_ERROR")))
+                .andExpect(jsonPath("$.message", is("サーバー内部で予期せぬエラーが発生しました")));
+    }
 }
