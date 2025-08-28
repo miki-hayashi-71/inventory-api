@@ -14,6 +14,9 @@ public class CustomExceptionHandler {
     // Service層で定義するエラーメッセージの接頭辞
     private static final String DUPLICATE_PREFIX = "DUPLICATE:";
     private static final String LIMIT_PREFIX = "LIMIT:";
+    private static final String NOT_FOUND_PREFIX = "NOT_FOUND:";
+    private static final String FORBIDDEN_PREFIX = "FORBIDDEN:";
+    private static final String CONFLICT_PREFIX = "CONFLICT:";
 
     // エラーメッセージを定数化
     private static final String MSG_VALIDATION_ERROR = "不正なリクエストです";
@@ -58,7 +61,9 @@ public class CustomExceptionHandler {
     // 400 or 409: Service層で発生したエラーをハンドリング
     @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<ErrorResponse> handleIllegalStateException(IllegalStateException e) {
+
         String message = e.getMessage();
+
         if(message.startsWith(DUPLICATE_PREFIX)) {
             ErrorResponse errorResponse = new ErrorResponse("CATEGORY_NAME_DUPLICATE", message.substring(DUPLICATE_PREFIX.length()));
             return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT); // 409
@@ -66,6 +71,22 @@ public class CustomExceptionHandler {
         if (message.startsWith(LIMIT_PREFIX)) {
             ErrorResponse errorResponse = new ErrorResponse("CATEGORY_LIMIT_EXCEEDED", message.substring(LIMIT_PREFIX.length()));
             return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST); // 400
+        }
+        if (message.startsWith(NOT_FOUND_PREFIX)) {
+            String errorMessage = message.substring(NOT_FOUND_PREFIX.length());
+            ErrorResponse errorResponse = new ErrorResponse("NOT_FOUND_ERROR", errorMessage);
+            return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND); // 404
+        }
+        if (message.startsWith(FORBIDDEN_PREFIX)) {
+            String errorMessage = message.substring(FORBIDDEN_PREFIX.length());
+            String errorCode = message.contains("デフォルト") ? "DEFAULT_CATEGORY_IMMUTABLE" : "FORBIDDEN_ERROR";
+            ErrorResponse errorResponse = new ErrorResponse(errorCode, errorMessage);
+            return new ResponseEntity<>(errorResponse, HttpStatus.FORBIDDEN); // 403
+        }
+        if (message.startsWith(CONFLICT_PREFIX)) {
+            String errorMessage = message.substring(CONFLICT_PREFIX.length());
+            ErrorResponse errorResponse = new ErrorResponse("CATEGORY_NOT_EMPTY", errorMessage);
+            return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT); // 409
         }
         // その他のIllegalStateExceptionは汎用的な400エラーとして返す
         ErrorResponse errorResponse = new ErrorResponse("BAD_REQUEST", MSG_BAD_REQUEST);
