@@ -32,54 +32,39 @@ public class CategoryService {
 
     // --エラーメッセージを定数で管理--
     // TODO: メッセージ用のプロパティファイルを用意したい（https://github.com/miki-hayashi-71/inventory-api/pull/18#discussion_r2299559046）
-    // creteCategory用
     private static final String MSG_DUPLICATE_CREATE = "DUPLICATE:そのカテゴリ名は既に使用されています";
     private static final String MSG_LIMIT_CREATE = "LIMIT:登録できるカテゴリの上限に達しています";
-
-    // updateCategory用
     private static final String MSG_NOT_FOUND_UPDATE = "NOT_FOUND:該当のカテゴリが見つかりません";
-    private static final String MSG_FORBIDDEN_UPDATE = "FORBIDDEN:デフォルトカテゴリは編集できません";
-    private static final String MSG_DUPLICATE_UPDATE = "DUPLICATE:そのカテゴリ名は既に使用されています";
-
-    // 共通
-    private static final String MSG_DB_ACCESS_ERROR = "データベースへの保存に失敗しました";
+    private static final String MSG_FORBIDDEN_UPDATE = "FORBIDDEN:このカテゴリを操作する権限がありません";
+    private static final String MSG_DB_ACCESS_ERROR = "データベースへのアクセスに失敗しました";
     private static final String MSG_UNEXPECTED_ERROR = "予期せぬエラーが発生しました";
 
     /**
      * 新しいカスタムカテゴリを1件登録
-     * POST /categories
+     * createCategory
      */
     @Transactional  // このメソッド内の処理をすべて一つのトランザクション（全て成功or全て失敗）として実行
-    public Category createCategory(CategoryCreateRequest request, String userId) {
-
+    public Category createCategory(CategoryCreateRequest request,
+                                   String userId
+    ) {
         try {
-            // ログインユーザーとシステムユーザーのカテゴリを取得する
-            List<String> userIdsToCheck = List.of(userId, SYSTEM_USER_ID);
-            List<Category> existingCategories = categoryRepository.findByUserIdInAndDeletedFalse(userIdsToCheck);
+            List<Category> existingCategories = categoryRepository.findUserCategories(userId, SYSTEM_USER_ID);
 
             // 重複チェック
-            boolean isDuplicate = existingCategories.stream()
-                    .anyMatch(category -> category.getName().equals(request.getName()));
-            if (isDuplicate) {
-                throw new IllegalStateException(MSG_DUPLICATE_CREATE);
-            }
+            validateCategoryName(request.getName(), null, existingCategories);
 
-            // 取得したリストからカスタムカテゴリの上限チェック
+            // 上限チェック
             long userCategoryCount = existingCategories.stream()
-                    .filter(category -> category.getUserId().equals(userId))
+                    .filter(category -> userId.equals(category.getUserId()))
                     .count();
             if (userCategoryCount >= maxCustomCategoryLimit) {
                 throw new IllegalStateException(MSG_LIMIT_CREATE);
             }
 
             // 新しいカテゴリを作成して保存
-            Category newCategory = new Category();
-
-            newCategory.setName(request.getName());
-            newCategory.setUserId(userId);
-            newCategory.setDeleted(false);
-
+            Category newCategory = new Category(userId, request.getName(), false);
             return categoryRepository.save(newCategory);
+
         } catch (IllegalStateException e) {
             throw e;
         } catch (DataAccessException e) {
@@ -93,11 +78,10 @@ public class CategoryService {
 
     /**
      * カスタムカテゴリの一覧を取得
-     * GET /categories
+     * getCategoryList
      */
     public List<CategoryResponse> getCategoryList(String userId) {
         try {
-            // DBからカスタムカテゴリとデフォルトカテゴリを取得する
             List<Category> categories = categoryRepository.findUserCategories(userId, SYSTEM_USER_ID);
 
             // 日本語の辞書順でソートするためのCollatorを準備
@@ -118,29 +102,28 @@ public class CategoryService {
 
     /**
      * カスタムカテゴリを1件更新
-     * PATCH /categories/{categoryId}
+     * updateCategory
      */
     @Transactional
-    public Category updateCategory(Integer categoryId, CategoryUpdateRequest request, String userId) {
+    public Category updateCategory(
+            Integer categoryId,
+            CategoryUpdateRequest request,
+            String userId
+    ) {
         try {
-            // DBからログインユーザー、システムユーザーのカテゴリをまとめて取得
             List<Category> categories = categoryRepository.findUserCategories(userId, SYSTEM_USER_ID);
 
-            // カテゴリ名の重複チェック
-            boolean isDuplicate = categories.stream()
-                    .anyMatch(c -> c.getName().equals(request.getName()) && !c.getId().equals(categoryId));
-            if (isDuplicate) {
-                throw new IllegalStateException(MSG_DUPLICATE_UPDATE);
-            }
+            // 重複チェック
+            validateCategoryName(request.getName(), categoryId, categories);
 
-            // 更新対象のカテゴリを探す
+            // 更新対象の検索
             Category categoryToUpdate = categories.stream()
                     .filter(category -> category.getId().equals(categoryId))
                     .findFirst()
                     .orElseThrow(() -> new IllegalStateException(MSG_NOT_FOUND_UPDATE));
 
             // 権限チェック
-            if (!categoryToUpdate.getUserId().equals(userId)) {
+            if (!userId.equals(categoryToUpdate.getUserId())) {
                 throw new IllegalStateException(MSG_FORBIDDEN_UPDATE);
             }
 
@@ -155,6 +138,30 @@ public class CategoryService {
             throw new RuntimeException(MSG_UNEXPECTED_ERROR, e);
         } catch (Exception e) {
             throw new RuntimeException(MSG_UNEXPECTED_ERROR, e);
+        }
+    }
+
+    // =====================================================================================
+    // Private Helper Methods (共通処理)
+    // =====================================================================================
+
+    /**
+     * カテゴリ名の重複をチェックする共通メソッド
+     * @param newName 新しいカテゴリ名
+     * @param categoryIdToExclude 重複チェックから除外するカテゴリID (更新時に使用)
+     * @param categories チェック対象のカテゴリリスト
+     */
+    private void validateCategoryName(
+            String newName,
+            Integer categoryIdToExclude,
+            List<Category> categories
+    ) {
+        boolean isDuplicate = categories.stream()
+                .filter(category -> !category.getId().equals(categoryIdToExclude))
+                .anyMatch(category -> category.getName().equals(newName));
+
+        if (isDuplicate) {
+            throw new IllegalStateException(MSG_DUPLICATE_CREATE);
         }
     }
 }

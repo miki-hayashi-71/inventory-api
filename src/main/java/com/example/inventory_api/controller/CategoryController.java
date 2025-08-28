@@ -31,11 +31,7 @@ public class CategoryController {
 
         Category createdCategory = categoryService.createCategory(request, currentUserId);
 
-        CategoryResponse response = new CategoryResponse();
-        response.setId(createdCategory.getId());
-        response.setName(createdCategory.getName());
-
-        return response;
+        return new CategoryResponse(createdCategory);
     }
 
     /**
@@ -63,10 +59,6 @@ public class CategoryController {
 
         Category updatedCategory = categoryService.updateCategory(categoryId, request, currentUserId);
 
-        CategoryResponse response = new CategoryResponse();
-        response.setId(updatedCategory.getId());
-        response.setName(updatedCategory.getName());
-
-        return response;
+        return new CategoryResponse(updatedCategory);
     }
 }
