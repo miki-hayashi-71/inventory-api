@@ -39,7 +39,7 @@ public class CategoryControllerTest {
     private CategoryService categoryService;
 
     /**
-     * POST /categories のテスト
+     * createCategory のテスト
      */
     @Test
     void createCategory_正常系_201Createdと作成されたカテゴリ情報を返す() throws Exception {
@@ -149,7 +149,7 @@ public class CategoryControllerTest {
     }
 
     /**
-     * GET /categories のテスト
+     * getCategoryList のテスト
      */
     @Test
     void getCategoryList_正常系_200OKとカテゴリリストを返す() throws Exception {

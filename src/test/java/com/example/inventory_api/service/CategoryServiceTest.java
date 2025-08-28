@@ -41,7 +41,7 @@ public class CategoryServiceTest {
     }
 
     /**
-     * POST /categories のテスト
+     * createCategory のテスト
      */
     @Test
     void createCategory_正常なリクエストの場合_カテゴリが作成される() {
@@ -203,34 +203,18 @@ public class CategoryServiceTest {
     }
   
     /**
-     * GET /categories のテスト
+     * getCategoryList のテスト
      */
     @Test
     void getCategoryList_リポジトリから取得したカテゴリリストを辞書順で返す() {
         // Arrange
-        Category category1 = new Category();
-        category1.setId(1);
-        category1.setName("玄関");
-
-        Category category2 = new Category();
-        category2.setId(2);
-        category2.setName("リビング・ダイニング");
-
-        Category category3 = new Category();
-        category3.setId(3);
-        category3.setName("寝室");
-
-        Category category4 = new Category();
-        category4.setId(4);
-        category4.setName("BathRoom");
-
-        Category category5 = new Category();
-        category5.setId(5);
-        category5.setName("といれ");
-
-
-        // 辞書順ではないリストを作成
-        List<Category> unsortedList = Arrays.asList(category1, category2, category3, category4, category5);
+        List<Category> unsortedList = Arrays.asList(
+                new Category(1, testUserId, "玄関", false),
+                new Category(2, testUserId, "リビング・ダイニング", false),
+                new Category(3, testUserId, "寝室", false),
+                new Category(4, testUserId, "BathRoom", false),
+                new Category(5, testUserId, "といれ", false)
+        );
 
         when(categoryRepository.findUserCategories(testUserId, testSystemUserId)).
                 thenReturn(unsortedList);
