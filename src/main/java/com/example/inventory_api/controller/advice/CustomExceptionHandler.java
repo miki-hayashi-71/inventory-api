@@ -83,20 +83,18 @@ public class CustomExceptionHandler {
             return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST); // 400
         }
         if (message.startsWith(NOT_FOUND_PREFIX)) {
-            String errorMessage = message.substring(NOT_FOUND_PREFIX.length());
-            ErrorResponse errorResponse = new ErrorResponse("NOT_FOUND_ERROR", errorMessage);
+            ErrorResponse errorResponse = new ErrorResponse("NOT_FOUND_ERROR", message.substring(10));
             return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND); // 404
         }
         if (message.startsWith(FORBIDDEN_PREFIX)) {
             String errorMessage = message.substring(FORBIDDEN_PREFIX.length());
             String errorCode = message.contains("デフォルト") ? "DEFAULT_CATEGORY_IMMUTABLE" : "FORBIDDEN_ERROR";
             ErrorResponse errorResponse = new ErrorResponse(errorCode, errorMessage);
-            return new ResponseEntity<>(errorResponse, HttpStatus.FORBIDDEN); // 403
+            return new ResponseEntity<>(errorResponse, HttpStatus.FORBIDDEN);
         }
         if (message.startsWith(CONFLICT_PREFIX)) {
-            String errorMessage = message.substring(CONFLICT_PREFIX.length());
-            ErrorResponse errorResponse = new ErrorResponse("CATEGORY_NOT_EMPTY", errorMessage);
-            return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT); // 409
+            ErrorResponse errorResponse = new ErrorResponse("CATEGORY_NOT_EMPTY", message.substring(CONFLICT_PREFIX.length()));
+            return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
         }
         // その他のIllegalStateExceptionは汎用的な400エラーとして返す
         ErrorResponse errorResponse = new ErrorResponse("BAD_REQUEST", MSG_BAD_REQUEST);

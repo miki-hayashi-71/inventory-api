@@ -6,7 +6,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 @Data
-public class CategoryCreateRequest {
+public class CategoryUpdateRequest {
 
     @Pattern(regexp = ".*[^\\s　].*", message = "カテゴリ名は必須です")
     @NotBlank(message = "カテゴリ名は必須です")

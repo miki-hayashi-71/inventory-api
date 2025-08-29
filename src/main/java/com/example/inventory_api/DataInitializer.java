@@ -26,7 +26,18 @@ public class DataInitializer implements CommandLineRunner{
         final String SYSTEM_USER_ID = "system";
 
         // 作成するデフォルトカテゴリのリスト
-        List<String> categoryNames = List.of("キッチン", "バスルーム", "洗面所・脱衣所", "トイレ", "リビング・ダイニング", "寝室", "玄関", "収納・クローゼット", "掃除用品", "備蓄・防災");
+        List<String> categoryNames = List.of(
+                "キッチン",
+                "バスルーム",
+                "洗面所・脱衣所",
+                "トイレ",
+                "リビング・ダイニング",
+                "寝室",
+                "玄関",
+                "収納・クローゼット",
+                "掃除用品",
+                "備蓄・防災"
+        );
 
         for (String name : categoryNames) {
             // アプリを起動するたびにデフォルトカテゴリが作成されないよう、重複チェックを行う
