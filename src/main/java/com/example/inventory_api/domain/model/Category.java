@@ -27,5 +27,4 @@ public class Category {
         this.name = name;
         this.deleted = deleted;
     }
-
 }

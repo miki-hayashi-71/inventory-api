@@ -9,6 +9,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/categories")
 @RequiredArgsConstructor
@@ -16,6 +18,10 @@ public class CategoryController {
 
     private final CategoryService categoryService;
 
+    /**
+     * 新しいカスタムカテゴリを1件登録するAPI
+     * POST /categories
+     */
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public CategoryResponse createCategory(@RequestBody @Validated CategoryCreateRequest request) {
@@ -29,6 +35,19 @@ public class CategoryController {
         response.setName(createdCategory.getName());
 
         return response;
+    }
+
+    /**
+     * カテゴリ一覧を取得するAPI
+     * GET /categories
+     */
+    @GetMapping
+    public List<CategoryResponse> getCategoryList() {
+        //  TODO:認証機能実装後、実際のuserIdに置き換える
+        String currentUserId = "user1";
+
+        // serviceからResponseのリストを受け取って返す
+        return categoryService.getCategoryList(currentUserId);
     }
 
     /**
