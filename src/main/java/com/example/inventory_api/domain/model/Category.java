@@ -22,9 +22,10 @@ public class Category {
 
     private Boolean deleted;
 
-    public Category(String userId,
-                    String name,
-                    Boolean deleted
+    public Category(
+            String userId,
+            String name,
+            Boolean deleted
     ) {
         this.userId = userId;
         this.name = name;
