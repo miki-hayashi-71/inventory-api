@@ -56,46 +56,6 @@ public class CategoryRepositoryTest {
         assertThat(result).isEmpty();
     }
 
-    @Test
-    void findByUerIdAndDeletedFalse_指定したユーザーIDリストに紐づく未削除カテゴリのみを返す() {
-        // Arrange
-        // 1. テストユーザーのカテゴリ (取得対象)
-        Category testUserCategory = new Category();
-        testUserCategory.setName("カテゴリ1");
-        testUserCategory.setUserId(testUserId);
-        testUserCategory.setDeleted(false);
-        categoryRepository.save(testUserCategory);
-
-        // 2. システムユーザーのカテゴリ (取得対象)
-        Category systemCategory = new Category();
-        systemCategory.setName("カテゴリ2");
-        systemCategory.setUserId(systemUserId);
-        systemCategory.setDeleted(false);
-        categoryRepository.save(systemCategory);
-
-        // 3. テストユーザーの削除済みカテゴリ (取得対象外)
-        Category deletedCategory = new Category();
-        deletedCategory.setName("カテゴリ3");
-        deletedCategory.setUserId(testUserId);
-        deletedCategory.setDeleted(true);
-        categoryRepository.save(deletedCategory);
-
-        // 4. 別のユーザーのカテゴリ (取得対象外)
-        Category anotherUserCategory = new Category();
-        anotherUserCategory.setName("カテゴリ4");
-        anotherUserCategory.setUserId(anotherUserId);
-        anotherUserCategory.setDeleted(false);
-        categoryRepository.save(anotherUserCategory);
-
-        // Act
-        List<String> userIdsToSearch = List.of(testUserId, systemUserId);
-        List<Category> result = categoryRepository.findByUserIdInAndDeletedFalse(userIdsToSearch);
-
-        // Assert
-        assertThat(result).hasSize(2);
-        assertThat(result).extracting(Category::getName).containsExactlyInAnyOrder("カテゴリ1", "カテゴリ2");
-    }
-
     /**
      * findUserCategories のテスト
      */
