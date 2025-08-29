@@ -49,4 +49,17 @@ public class CategoryController {
         // serviceからResponseのリストを受け取って返す
         return categoryService.getCategoryList(currentUserId);
     }
+
+    /**
+     * 指定されたIDのカスタムカテゴリを1件論理削除するAPI
+     * DELETE /categories/{categoryId}
+     */
+    @DeleteMapping("/{categoryId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT) // 成功時は204 No Contentを返す
+    public void deleteCategory(@PathVariable Integer categoryId) {
+        // TODO: 認証機能実装後、実際のuserIdに置き換える
+        String currentUserId = "user1";
+
+        categoryService.deleteCategory(categoryId, currentUserId);
+    }
 }
