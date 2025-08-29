@@ -2,6 +2,7 @@ package com.example.inventory_api.controller;
 
 import com.example.inventory_api.controller.dto.CategoryCreateRequest;
 import com.example.inventory_api.controller.dto.CategoryResponse;
+import com.example.inventory_api.controller.dto.CategoryUpdateRequest;
 import com.example.inventory_api.domain.model.Category;
 import com.example.inventory_api.service.CategoryService;
 import lombok.RequiredArgsConstructor;
@@ -30,11 +31,7 @@ public class CategoryController {
 
         Category createdCategory = categoryService.createCategory(request, currentUserId);
 
-        CategoryResponse response = new CategoryResponse();
-        response.setId(createdCategory.getId());
-        response.setName(createdCategory.getName());
-
-        return response;
+        return new CategoryResponse(createdCategory);
     }
 
     /**
@@ -48,5 +45,20 @@ public class CategoryController {
 
         // serviceからResponseのリストを受け取って返す
         return categoryService.getCategoryList(currentUserId);
+    }
+
+    /**
+     * カスタムカテゴリを1件更新するAPI
+     * PATCH /categories/{categoryId}
+     */
+    @PatchMapping("/{categoryId}")
+    public CategoryResponse updateCategory(@PathVariable Integer categoryId,
+                                           @RequestBody @Validated CategoryUpdateRequest request) {
+        // TODO: 認証機能実装後、実際のuserIdに置き換える
+        String currentUserId = "user1";
+
+        Category updatedCategory = categoryService.updateCategory(categoryId, request, currentUserId);
+
+        return new CategoryResponse(updatedCategory);
     }
 }
