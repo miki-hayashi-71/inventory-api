@@ -21,14 +21,6 @@ public interface CategoryRepository extends JpaRepository<Category, Integer> {
     List<Category> findByNameAndUserIdAndDeletedFalse(String name, String userId);
 
     /**
-     * 指定した複数のユーザーIDに一致し、かつ論理削除されていないカテゴリを全て取得
-     * @param userIds ユーザーIDのリスト
-     * @return 条件に一致するカテゴリのリスト
-     */
-    // TODO: createで使ってるけど、やってることはgetやupdateと一緒なので、これを削除してfindUserCategoriesに一本化できる
-    List<Category> findByUserIdInAndDeletedFalse(List<String> userIds);
-
-    /**
      * ログインユーザーのカスタムカテゴリと、システムのデフォルトカテゴリの一覧を取得
      * @param userId       ログインユーザーのID
      * @param systemUserId システムユーザーのID
