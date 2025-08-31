@@ -12,23 +12,23 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class Category {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Integer id;
 
-    private String userId;
+  private String userId;
 
-    private String name;
+  private String name;
 
-    private Boolean deleted;
+  private Boolean deleted;
 
-    public Category(
-            String userId,
-            String name,
-            Boolean deleted
-    ) {
-        this.userId = userId;
-        this.name = name;
-        this.deleted = deleted;
-    }
+  public Category(
+      String userId,
+      String name,
+      Boolean deleted
+  ) {
+    this.userId = userId;
+    this.name = name;
+    this.deleted = deleted;
+  }
 }

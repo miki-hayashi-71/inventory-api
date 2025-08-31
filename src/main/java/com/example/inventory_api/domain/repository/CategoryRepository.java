@@ -10,30 +10,31 @@ import java.util.List;
 // Categoryエンティティとやり取りを行うリポジトリ（インターフェース）
 public interface CategoryRepository extends JpaRepository<Category, Integer> {
 
-    /**
-     * 指定した名称とユーザーIDに一致し、かつ論理削除されていないカテゴリを検索
-     * DataInitializerでの重複チェックに使用
-     * @param name   カテゴリ名
-     * @param userId ユーザーID
-     * @return 条件に一致するカテゴリのリスト
-     */
-    // TODO: SQLでの取得に変更したい
-    List<Category> findByNameAndUserIdAndDeletedFalse(String name, String userId);
+  /**
+   * 指定した名称とユーザーIDに一致し、かつ論理削除されていないカテゴリを検索 DataInitializerでの重複チェックに使用
+   *
+   * @param name   カテゴリ名
+   * @param userId ユーザーID
+   * @return 条件に一致するカテゴリのリスト
+   */
+  // TODO: SQLでの取得に変更したい
+  List<Category> findByNameAndUserIdAndDeletedFalse(String name, String userId);
 
-    /**
-     * ログインユーザーのカスタムカテゴリと、システムのデフォルトカテゴリの一覧を取得
-     * @param userId       ログインユーザーのID
-     * @param systemUserId システムユーザーのID
-     * @return ログインユーザーの未削除カテゴリと、システムの未削除カテゴリの合算リスト
-     */
-    @Query(value = """
-               SELECT *
-               FROM categories
-               WHERE user_id IN (:userId, :systemUserId)
-               AND deleted = false
-               """, nativeQuery = true)
-    List<Category> findUserCategories(
-            @Param("userId") String userId,
-            @Param("systemUserId") String systemUserId
-    );
+  /**
+   * ログインユーザーのカスタムカテゴリと、システムのデフォルトカテゴリの一覧を取得
+   *
+   * @param userId       ログインユーザーのID
+   * @param systemUserId システムユーザーのID
+   * @return ログインユーザーの未削除カテゴリと、システムの未削除カテゴリの合算リスト
+   */
+  @Query(value = """
+      SELECT *
+      FROM categories
+      WHERE user_id IN (:userId, :systemUserId)
+      AND deleted = false
+      """, nativeQuery = true)
+  List<Category> findUserCategories(
+      @Param("userId") String userId,
+      @Param("systemUserId") String systemUserId
+  );
 }
