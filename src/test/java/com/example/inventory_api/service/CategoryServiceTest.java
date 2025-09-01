@@ -1,22 +1,10 @@
 package com.example.inventory_api.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.anyString;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 import com.example.inventory_api.controller.dto.CategoryCreateRequest;
 import com.example.inventory_api.controller.dto.CategoryResponse;
+import com.example.inventory_api.controller.dto.CategoryUpdateRequest;
 import com.example.inventory_api.domain.model.Category;
 import com.example.inventory_api.domain.repository.CategoryRepository;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,6 +13,16 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.test.util.ReflectionTestUtils;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class CategoryServiceTest {
@@ -53,7 +51,7 @@ public class CategoryServiceTest {
     request.setName("新しいカテゴリ");
 
     // 重複なし、上限未達
-    when(categoryRepository.findByUserIdInAndDeletedFalse(any(List.class)))
+    when(categoryRepository.findUserCategories(anyString(), anyString()))
         .thenReturn(new ArrayList<>());
     when(categoryRepository.save(any(Category.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
@@ -73,10 +71,9 @@ public class CategoryServiceTest {
     CategoryCreateRequest request = new CategoryCreateRequest();
     request.setName("重複カテゴリ"); // 作りたいカテゴリ
 
-    Category existingCategory = new Category();
-    existingCategory.setName("重複カテゴリ"); // 既に存在するカテゴリ
+    Category existingCategory = new Category(1, testSystemUserId, "重複カテゴリ", false);
 
-    when(categoryRepository.findByUserIdInAndDeletedFalse(any(List.class)))
+    when(categoryRepository.findUserCategories(anyString(), anyString()))
         .thenReturn(List.of(existingCategory));
 
     // Act & Assert
@@ -96,14 +93,13 @@ public class CategoryServiceTest {
     // 50件登録済みのリストを作成
     List<Category> fullCategoryList = new ArrayList<>();
     for (int i = 0; i < 50; i++) {
-      Category c = new Category();
-      c.setUserId(testUserId);
-      c.setName("カテゴリ" + i);
-      fullCategoryList.add(c);
+      fullCategoryList.add(
+          new Category(i, testUserId, "カテゴリ" + i, false)
+      );
     }
 
     // repositoryが50件のリストを返すよう設定
-    when(categoryRepository.findByUserIdInAndDeletedFalse(any(List.class)))
+    when(categoryRepository.findUserCategories(anyString(), anyString()))
         .thenReturn(fullCategoryList);
 
     // Act and Assert
@@ -123,14 +119,13 @@ public class CategoryServiceTest {
     // 50件登録済みのリストを作成
     List<Category> fullCategoryList = new ArrayList<>();
     for (int i = 0; i < 49; i++) {
-      Category c = new Category();
-      c.setUserId(testUserId);
-      c.setName("カテゴリ" + i);
-      fullCategoryList.add(c);
+      fullCategoryList.add(
+          new Category(i, testUserId, "カテゴリ" + i, false)
+      );
     }
 
     // repositoryが50件のリストを返すよう設定
-    when(categoryRepository.findByUserIdInAndDeletedFalse(any(List.class)))
+    when(categoryRepository.findUserCategories(anyString(), anyString()))
         .thenReturn(fullCategoryList);
     when(categoryRepository.save(any(Category.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
@@ -152,7 +147,7 @@ public class CategoryServiceTest {
     request.setName("新しいカテゴリ");
 
     // 重複なし、上限未達
-    when(categoryRepository.findByUserIdInAndDeletedFalse(any(List.class)))
+    when(categoryRepository.findUserCategories(anyString(), anyString()))
         .thenReturn(new ArrayList<>());
 
     // repository.save()が呼ばれたら、DataAccessExceptionをスローするよう設定
@@ -173,7 +168,7 @@ public class CategoryServiceTest {
     request.setName("新しいカテゴリ");
 
     // DB検索時にNullPointerExceptionが発生するよう設定
-    when(categoryRepository.findByUserIdInAndDeletedFalse(any(List.class)))
+    when(categoryRepository.findUserCategories(anyString(), anyString()))
         .thenThrow(new NullPointerException("テスト用のエラー"));
 
     // Act & Assert
@@ -193,7 +188,7 @@ public class CategoryServiceTest {
     request.setName("新しいカテゴリ");
 
     // DB検索時に汎用的な例外が発生するよう設定
-    when(categoryRepository.findByUserIdInAndDeletedFalse(any(List.class)))
+    when(categoryRepository.findUserCategories(anyString(), anyString()))
         .thenThrow(new RuntimeException("テスト用の予期せぬエラー"));
 
     // Act & Assert
@@ -253,7 +248,7 @@ public class CategoryServiceTest {
     // Act & Assert
     assertThatThrownBy(() -> categoryService.getCategoryList(testUserId))
         .isInstanceOf(RuntimeException.class)
-        .hasMessage("データベースへの保存に失敗しました");
+        .hasMessage("データベースへのアクセスに失敗しました");
   }
 
   @Test
@@ -267,4 +262,163 @@ public class CategoryServiceTest {
         .isInstanceOf(RuntimeException.class)
         .hasMessage("予期せぬエラーが発生しました");
   }
+
+  /**
+   * updateCategory のテスト
+   */
+  @Test
+  void updateCategory_正常系_カテゴリ名が更新される() {
+    // Arrange
+    CategoryUpdateRequest request = new CategoryUpdateRequest();
+    request.setName("更新後の名前");
+
+    Category originalCategory = new Category(1, testUserId, "元の名前", false);
+    List<Category> categoryList = List.of(originalCategory);
+
+    when(categoryRepository.findUserCategories(testUserId, testSystemUserId))
+        .thenReturn(categoryList);
+    when(categoryRepository.save(any(Category.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
+
+    // Act
+    Category result = categoryService.updateCategory(1, request, testUserId);
+
+    // Assert
+    assertThat(result.getName()).isEqualTo("更新後の名前");
+    verify(categoryRepository, times(1)).save(any(Category.class));
+  }
+
+  @Test
+  void updateCategory_更新対象のカテゴリが存在しない場合_CategoryNotFoundExceptionをスローする() {
+    // Arrange
+    CategoryUpdateRequest request = new CategoryUpdateRequest();
+    request.setName("更新後の名前");
+
+    List<Category> emptyList = new ArrayList<>();
+    when(categoryRepository.findUserCategories(testUserId, testSystemUserId))
+        .thenReturn(emptyList);
+
+    // Act & Assert
+    assertThatThrownBy(() -> categoryService.updateCategory(999, request, testUserId))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessageContaining("NOT_FOUND");
+  }
+
+  @Test
+  void updateCategory_別のユーザーのカテゴリを更新しようとした場合_ForbiddenExceptionをスローする() {
+    // Arrange
+    CategoryUpdateRequest request = new CategoryUpdateRequest();
+    request.setName("更新後の名前");
+
+    // testUserIdではないユーザーが所有するカテゴリ
+    Category anotherUserCategory = new Category(2, "anotherUser", "他人のカテゴリ", false);
+    List<Category> categoryList = List.of(anotherUserCategory);
+
+    when(categoryRepository.findUserCategories(testUserId, testSystemUserId))
+        .thenReturn(categoryList);
+
+    // Act & Assert
+    assertThatThrownBy(() -> categoryService.updateCategory(2, request, testUserId))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessageContaining("FORBIDDEN");
+  }
+
+  @Test
+  void updateCategory_デフォルトカテゴリを更新しようとした場合_ForbiddenExceptionをスローする() {
+    // Arrange
+    CategoryUpdateRequest request = new CategoryUpdateRequest();
+    request.setName("更新後の名前");
+
+    Category defaultCategory = new Category(1, testSystemUserId, "デフォルトカテゴリ", false);
+    List<Category> categoryList = new ArrayList<>(List.of(defaultCategory));
+
+    when(categoryRepository.findUserCategories(testUserId, testSystemUserId))
+        .thenReturn(categoryList);
+
+    // Act & Assert
+    assertThatThrownBy(() -> categoryService.updateCategory(1, request, testUserId))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessageContaining("FORBIDDEN");
+  }
+
+  @Test
+  void updateCategory_カテゴリ名が既存のカテゴリと重複する場合_CategoryNameDuplicateExceptionをスローする() {
+    // Arrange
+    CategoryUpdateRequest request = new CategoryUpdateRequest();
+    request.setName("既存の名前");
+
+    Category categoryToUpdate = new Category(1, testUserId, "元の名前", false);
+    Category existingCategory = new Category(2, testUserId, "既存の名前", false);
+    List<Category> categoryList = List.of(categoryToUpdate, existingCategory);
+
+    when(categoryRepository.findUserCategories(testUserId, testSystemUserId))
+        .thenReturn(categoryList);
+
+    // Act & Assert
+    assertThatThrownBy(() -> categoryService.updateCategory(1, request, testUserId))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessageContaining("DUPLICATE");
+  }
+
+  @Test
+  void updateCategory_DB保存時にDataAccessExceptionが発生する場合_RuntimeExceptionをスローする() {
+    // Arrange
+    CategoryUpdateRequest request = new CategoryUpdateRequest();
+    request.setName("更新後の名前");
+
+    Category originalCategory = new Category(1, testUserId, "元の名前", false);
+    List<Category> categoryList = new ArrayList<>(List.of(originalCategory));
+
+    when(categoryRepository.findUserCategories(testUserId, testSystemUserId))
+        .thenReturn(categoryList);
+    when(categoryRepository.save(any(Category.class)))
+        .thenThrow(new DataAccessResourceFailureException("DB接続エラー"));
+
+    // Act & Assert
+    assertThatThrownBy(() -> categoryService.updateCategory(1, request, testUserId))
+        .isInstanceOf(RuntimeException.class)
+        .hasMessage("データベースへのアクセスに失敗しました");
+  }
+
+  @Test
+  void updateCategory_DB保存時にNullPointerExceptionが発生する場合_RuntimeExceptionをスローする() {
+    // Arrange
+    CategoryUpdateRequest request = new CategoryUpdateRequest();
+    request.setName("更新後の名前");
+
+    Category originalCategory = new Category(1, testUserId, "元の名前", false);
+    List<Category> categoryList = new ArrayList<>(List.of(originalCategory));
+
+    when(categoryRepository.findUserCategories(testUserId, testSystemUserId))
+        .thenReturn(categoryList);
+    when(categoryRepository.save(any(Category.class)))
+        .thenThrow(new NullPointerException("テスト用のエラー"));
+
+    // Act & Assert
+    assertThatThrownBy(() -> categoryService.updateCategory(1, request, testUserId))
+        .isInstanceOf(RuntimeException.class)
+        .hasMessage("予期せぬエラーが発生しました")
+        .hasCauseInstanceOf(NullPointerException.class);
+  }
+
+  @Test
+  void updateCategory_予期せぬExceptionが発生する場合_RuntimeExceptionをスローする() {
+    // Arrange
+    CategoryUpdateRequest request = new CategoryUpdateRequest();
+    request.setName("更新後の名前");
+
+    Category originalCategory = new Category(1, testUserId, "元の名前", false);
+    List<Category> categoryList = new ArrayList<>(List.of(originalCategory));
+
+    when(categoryRepository.findUserCategories(testUserId, testSystemUserId))
+        .thenReturn(categoryList);
+    when(categoryRepository.save(any(Category.class)))
+        .thenThrow(new RuntimeException("テスト用の予期せぬエラー"));
+
+    // Act & Assert
+    assertThatThrownBy(() -> categoryService.updateCategory(1, request, testUserId))
+        .isInstanceOf(RuntimeException.class)
+        .hasMessage("予期せぬエラーが発生しました");
+  }
+
 }

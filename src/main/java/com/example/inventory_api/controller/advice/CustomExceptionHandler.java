@@ -77,12 +77,12 @@ public class CustomExceptionHandler {
 
     if (message.startsWith(DUPLICATE_PREFIX)) {
       ErrorResponse errorResponse = new ErrorResponse("CATEGORY_NAME_DUPLICATE",
-          message.substring(DUPLICATE_PREFIX.length()));
+        message.substring(DUPLICATE_PREFIX.length()));
       return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT); // 409
     }
     if (message.startsWith(LIMIT_PREFIX)) {
       ErrorResponse errorResponse = new ErrorResponse("CATEGORY_LIMIT_EXCEEDED",
-          message.substring(LIMIT_PREFIX.length()));
+        message.substring(LIMIT_PREFIX.length()));
       return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST); // 400
     }
     if (message.startsWith(NOT_FOUND_PREFIX)) {
@@ -92,13 +92,13 @@ public class CustomExceptionHandler {
     if (message.startsWith(FORBIDDEN_PREFIX)) {
       String errorMessage = message.substring(FORBIDDEN_PREFIX.length());
       String errorCode =
-          message.contains("デフォルト") ? "DEFAULT_CATEGORY_IMMUTABLE" : "FORBIDDEN_ERROR";
+        message.contains("デフォルト") ? "DEFAULT_CATEGORY_IMMUTABLE" : "FORBIDDEN_ERROR";
       ErrorResponse errorResponse = new ErrorResponse(errorCode, errorMessage);
       return new ResponseEntity<>(errorResponse, HttpStatus.FORBIDDEN);
-    }
+  }
     if (message.startsWith(CONFLICT_PREFIX)) {
       ErrorResponse errorResponse = new ErrorResponse("CATEGORY_NOT_EMPTY",
-          message.substring(CONFLICT_PREFIX.length()));
+        message.substring(CONFLICT_PREFIX.length()));
       return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
     }
     // その他のIllegalStateExceptionは汎用的な400エラーとして返す

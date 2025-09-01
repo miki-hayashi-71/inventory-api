@@ -40,13 +40,13 @@ public class CategoryService {
   private static final String MSG_DB_ACCESS_ERROR = "データベースへのアクセスに失敗しました";
   private static final String MSG_UNEXPECTED_ERROR = "予期せぬエラーが発生しました";
 
-  // deleteCategory用
-  private static final String MSG_NOT_FOUND_DELETE = "NOT_FOUND:該当のカテゴリが見つかりません";
-  private static final String MSG_FORBIDDEN_DELETE = "FORBIDDEN:このカテゴリを操作する権限がありません";
-  private static final String MSG_FORBIDDEN_DEFAULT_DELETE = "FORBIDDEN:デフォルトカテゴリは削除できません";
-  private static final String MSG_CONFLICT_DELETE = "CONFLICT:アイテムが1件以上登録されているカテゴリは削除できません";
+    // deleteCategory用
+    private static final String MSG_NOT_FOUND_DELETE = "NOT_FOUND:該当のカテゴリが見つかりません";
+    private static final String MSG_FORBIDDEN_DELETE = "FORBIDDEN:このカテゴリを操作する権限がありません";
+    private static final String MSG_FORBIDDEN_DEFAULT_DELETE = "FORBIDDEN:デフォルトカテゴリは削除できません";
+    private static final String MSG_CONFLICT_DELETE = "CONFLICT:アイテムが1件以上登録されているカテゴリは削除できません";
 
-  /**
+    /**
    * 新しいカスタムカテゴリを1件登録 createCategory
    */
   @Transactional  // このメソッド内の処理をすべて一つのトランザクション（全て成功or全て失敗）として実行
@@ -167,46 +167,46 @@ public class CategoryService {
     }
   }
 
-  /**
-   * 指定されたIDのカスタムカテゴリを1件論理削除 DELETE /categories/{categoryId}
-   */
-  @Transactional
-  public void deleteCategory(Integer categoryId, String userId) {
-    try {
-      // IDでカテゴリを直接検索
-      Category categoryToDelete = categoryRepository.findById(categoryId)
-          .orElseThrow(() -> new IllegalStateException(MSG_NOT_FOUND_DELETE));
+    /**
+     * 指定されたIDのカスタムカテゴリを1件論理削除 DELETE /categories/{categoryId}
+     */
+    @Transactional
+    public void deleteCategory(Integer categoryId, String userId) {
+        try {
+            // IDでカテゴリを直接検索
+            Category categoryToDelete = categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new IllegalStateException(MSG_NOT_FOUND_DELETE));
 
-      // 削除済みでないか
-      if (categoryToDelete.getDeleted()) {
-        throw new IllegalStateException(MSG_NOT_FOUND_DELETE);
-      }
+            // 削除済みでないか
+            if (categoryToDelete.getDeleted()) {
+                throw new IllegalStateException(MSG_NOT_FOUND_DELETE);
+            }
 
-      // 権限チェック
-      if (!categoryToDelete.getUserId().equals(userId)) {
-        // デフォルトカテゴリの場合
-        if (SYSTEM_USER_ID.equals(categoryToDelete.getUserId())) {
-          throw new IllegalStateException(MSG_FORBIDDEN_DEFAULT_DELETE);
+            // 権限チェック
+            if (!categoryToDelete.getUserId().equals(userId)) {
+                // デフォルトカテゴリの場合
+                if (SYSTEM_USER_ID.equals(categoryToDelete.getUserId())) {
+                    throw new IllegalStateException(MSG_FORBIDDEN_DEFAULT_DELETE);
+                }
+                // 他人のカテゴリの場合
+                throw new IllegalStateException(MSG_FORBIDDEN_DELETE);
+            }
+
+            // カテゴリに紐づくアイテムの有無
+            if (itemRepository.existsItems(categoryId)) {
+                throw new IllegalStateException(MSG_CONFLICT_DELETE);
+            }
+
+            // 論理削除
+            categoryToDelete.setDeleted(true);
+            categoryRepository.save(categoryToDelete);
+
+        } catch (IllegalStateException e) {
+            throw e;
+        } catch (DataAccessException e) {
+            throw new RuntimeException(MSG_DB_ACCESS_ERROR, e);
+        } catch (Exception e) {
+            throw new RuntimeException(MSG_UNEXPECTED_ERROR, e);
         }
-        // 他人のカテゴリの場合
-        throw new IllegalStateException(MSG_FORBIDDEN_DELETE);
-      }
-
-      // カテゴリに紐づくアイテムの有無
-      if (itemRepository.existsItems(categoryId)) {
-        throw new IllegalStateException(MSG_CONFLICT_DELETE);
-      }
-
-      // 論理削除
-      categoryToDelete.setDeleted(true);
-      categoryRepository.save(categoryToDelete);
-
-    } catch (IllegalStateException e) {
-      throw e;
-    } catch (DataAccessException e) {
-      throw new RuntimeException(MSG_DB_ACCESS_ERROR, e);
-    } catch (Exception e) {
-      throw new RuntimeException(MSG_UNEXPECTED_ERROR, e);
     }
-  }
 }
