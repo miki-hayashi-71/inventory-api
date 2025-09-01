@@ -56,8 +56,10 @@ public class CategoryController {
    * カスタムカテゴリを1件更新するAPI PATCH /categories/{categoryId}
    */
   @PatchMapping("/{categoryId}")
-  public CategoryResponse updateCategory(@PathVariable Integer categoryId,
-      @RequestBody @Validated CategoryUpdateRequest request) {
+  public CategoryResponse updateCategory(
+      @PathVariable Integer categoryId,
+      @RequestBody @Validated CategoryUpdateRequest request
+  ) {
     // TODO: 認証機能実装後、実際のuserIdに置き換える
     String currentUserId = "user1";
 

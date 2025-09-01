@@ -1,5 +1,17 @@
 package com.example.inventory_api.controller;
 
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 import com.example.inventory_api.controller.advice.CustomExceptionHandler;
 import com.example.inventory_api.controller.dto.CategoryCreateRequest;
 import com.example.inventory_api.controller.dto.CategoryResponse;
@@ -7,23 +19,14 @@ import com.example.inventory_api.controller.dto.CategoryUpdateRequest;
 import com.example.inventory_api.domain.model.Category;
 import com.example.inventory_api.service.CategoryService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Collections;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
-
-import java.util.Collections;
-import java.util.List;
-
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.is;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest({CategoryController.class, CustomExceptionHandler.class})
 public class CategoryControllerTest {
@@ -278,7 +281,7 @@ public class CategoryControllerTest {
     request.setName("更新カテゴリ");
 
     when(categoryService.updateCategory(anyInt(), any(), anyString()))
-        .thenThrow(new IllegalStateException("FORBIDDEN:このカテゴリを操作する権限がありません"));
+        .thenThrow(new IllegalStateException("FORBIDDEN:デフォルトカテゴリは操作できません"));
 
     // Act & Assert
     mockmvc.perform(patch("/categories/1") // デフォルトカテゴリのIDを想定

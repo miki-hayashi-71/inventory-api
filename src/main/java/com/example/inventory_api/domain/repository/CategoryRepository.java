@@ -2,6 +2,7 @@ package com.example.inventory_api.domain.repository;
 
 import com.example.inventory_api.domain.model.Category;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -16,17 +17,17 @@ public interface CategoryRepository extends JpaRepository<Category, Integer> {
    * @param userId ユーザーID
    * @return 条件に一致するカテゴリのリスト
    */
-  // TODO: SQLでの取得に変更したい
-  List<Category> findByNameAndUserIdAndDeletedFalse(String name, String userId);
-
-  /**
-   * 指定した複数のユーザーIDに一致し、かつ論理削除されていないカテゴリを全て取得
-   *
-   * @param userIds ユーザーIDのリスト
-   * @return 条件に一致するカテゴリのリスト
-   */
-  // TODO: createで使ってるけど、やってることはgetやupdateと一緒なので、これを削除してfindUserCategoriesに一本化できる
-  List<Category> findByUserIdInAndDeletedFalse(List<String> userIds);
+  @Query(value = """
+      SELECT *
+      FROM categories
+      WHERE name = :name
+      AND user_id = :userId
+      AND deleted = false
+      """, nativeQuery = true)
+  Optional<Category> duplicateCheck(
+      @Param("name") String name,
+      @Param("userId") String userId
+  );
 
   /**
    * ログインユーザーのカスタムカテゴリと、システムのデフォルトカテゴリの一覧を取得

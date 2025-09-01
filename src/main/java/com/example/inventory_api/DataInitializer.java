@@ -19,8 +19,6 @@ public class DataInitializer implements CommandLineRunner {
 
   @Override
   public void run(String... args) throws Exception {
-    // デフォルトカテゴリのデータ作成
-
     // システムユーザー（仮）
     final String SYSTEM_USER_ID = "system";
 
@@ -40,29 +38,43 @@ public class DataInitializer implements CommandLineRunner {
 
     for (String name : categoryNames) {
       // アプリを起動するたびにデフォルトカテゴリが作成されないよう、重複チェックを行う
-      if (categoryRepository.findByNameAndUserIdAndDeletedFalse(name, SYSTEM_USER_ID).isEmpty()) {
-        Category category = new Category();
-        category.setUserId(SYSTEM_USER_ID);
-        category.setName(name);
-        category.setDeleted(false);
+      if (categoryRepository.duplicateCheck(name, SYSTEM_USER_ID).isEmpty()) {
+        Category category = new Category(SYSTEM_USER_ID, name, false);
         categoryRepository.save(category);
       }
     }
 
-    // TODO: postItemの実装時に削除する（deleteCategorymの実装確認用のため）
+    // TODO: postItemの実装時に削除する（deleteCategoryの実装確認用のため）
     final String TENTATIVE_CATEGORY_NAME = "削除確認用カテゴリ";
-    final String TENTATIVE_USER_ID = "user1"; // Controllerの仮ユーザーIDと合わせる
+    final String TENTATIVE_USER_ID = "user1";
 
-    if (categoryRepository.findByNameAndUserIdAndDeletedFalse(TENTATIVE_CATEGORY_NAME,
-        TENTATIVE_USER_ID).isEmpty()) {
+    if (categoryRepository.duplicateCheck(TENTATIVE_CATEGORY_NAME, TENTATIVE_USER_ID).isEmpty()) {
       // カテゴリを作成
-      Category testCategory = new Category(TENTATIVE_USER_ID, TENTATIVE_CATEGORY_NAME, false);
+      Category testCategory = new Category(
+          TENTATIVE_USER_ID,
+          TENTATIVE_CATEGORY_NAME,
+          false
+      );
+
       Category savedCategory = categoryRepository.save(testCategory);
 
       // 上記のカテゴリに紐づくアイテムを作成
-      Item testItem = new Item(savedCategory.getId(), TENTATIVE_USER_ID, "カテゴリに属するアイテム",
-          1, false);
-      itemRepository.save(testItem);
+      List<String> itemNames = List.of(
+          "アイテム1",
+          "アイテム2",
+          "アイテム3"
+      );
+
+      for (String itemName : itemNames) {
+        Item testItem = new Item(
+            savedCategory.getId(),
+            TENTATIVE_USER_ID,
+            itemName,
+            1,
+            false
+        );
+        itemRepository.save(testItem);
+      }
     }
   }
 }

@@ -40,13 +40,20 @@ public class CustomExceptionHandler {
   // 400 Bad Request: 入力値のチェック
   @ExceptionHandler(MethodArgumentNotValidException.class) // DTOのバリデーションで拾えるもの
   public ResponseEntity<ErrorResponse> handleValidationExceptions(
-      MethodArgumentNotValidException e) {
+      MethodArgumentNotValidException e
+  ) {
     // 最初に見つかったエラーを取得
     FieldError fieldError = e.getBindingResult().getFieldError();
 
     if (fieldError == null) {
-      ErrorResponse errorResponse = new ErrorResponse("VALIDATION_ERROR", MSG_VALIDATION_ERROR);
-      return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+      ErrorResponse errorResponse = new ErrorResponse(
+          "VALIDATION_ERROR",
+          MSG_VALIDATION_ERROR
+      );
+      return new ResponseEntity<>(
+          errorResponse,
+          HttpStatus.BAD_REQUEST
+      );
     }
 
     String errorMessage = fieldError.getDefaultMessage();
@@ -66,52 +73,93 @@ public class CustomExceptionHandler {
     }
 
     ErrorResponse errorResponse = new ErrorResponse(errorCode, errorMessage);
-    return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+    return new ResponseEntity<>(
+        errorResponse,
+        HttpStatus.BAD_REQUEST
+    );
   }
 
   // 400 or 409: Service層で発生したエラーをハンドリング
   @ExceptionHandler(IllegalStateException.class)
-  public ResponseEntity<ErrorResponse> handleIllegalStateException(IllegalStateException e) {
-
+  public ResponseEntity<ErrorResponse> handleIllegalStateException(
+      IllegalStateException e
+  ) {
     String message = e.getMessage();
 
     if (message.startsWith(DUPLICATE_PREFIX)) {
-      ErrorResponse errorResponse = new ErrorResponse("CATEGORY_NAME_DUPLICATE",
-        message.substring(DUPLICATE_PREFIX.length()));
-      return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT); // 409
+      ErrorResponse errorResponse = new ErrorResponse(
+          "CATEGORY_NAME_DUPLICATE",
+          message.substring(DUPLICATE_PREFIX.length())
+      );
+      return new ResponseEntity<>(
+          errorResponse, HttpStatus.CONFLICT); // 409
     }
     if (message.startsWith(LIMIT_PREFIX)) {
-      ErrorResponse errorResponse = new ErrorResponse("CATEGORY_LIMIT_EXCEEDED",
-        message.substring(LIMIT_PREFIX.length()));
-      return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST); // 400
+      ErrorResponse errorResponse = new ErrorResponse(
+          "CATEGORY_LIMIT_EXCEEDED",
+          message.substring(LIMIT_PREFIX.length())
+      );
+      return new ResponseEntity<>(
+          errorResponse,
+          HttpStatus.BAD_REQUEST
+      ); // 400
     }
     if (message.startsWith(NOT_FOUND_PREFIX)) {
-      ErrorResponse errorResponse = new ErrorResponse("NOT_FOUND_ERROR", message.substring(10));
-      return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND); // 404
+      ErrorResponse errorResponse = new ErrorResponse(
+          "NOT_FOUND_ERROR",
+          message.substring(10)
+      );
+      return new ResponseEntity<>(
+          errorResponse,
+          HttpStatus.NOT_FOUND
+      ); // 404
     }
     if (message.startsWith(FORBIDDEN_PREFIX)) {
       String errorMessage = message.substring(FORBIDDEN_PREFIX.length());
-      String errorCode =
-        message.contains("デフォルト") ? "DEFAULT_CATEGORY_IMMUTABLE" : "FORBIDDEN_ERROR";
-      ErrorResponse errorResponse = new ErrorResponse(errorCode, errorMessage);
-      return new ResponseEntity<>(errorResponse, HttpStatus.FORBIDDEN);
-  }
-    if (message.startsWith(CONFLICT_PREFIX)) {
-      ErrorResponse errorResponse = new ErrorResponse("CATEGORY_NOT_EMPTY",
-        message.substring(CONFLICT_PREFIX.length()));
-      return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
+      String errorCode = message.contains("デフォルト") ?
+          "DEFAULT_CATEGORY_IMMUTABLE" : "FORBIDDEN_ERROR";
+      ErrorResponse errorResponse = new ErrorResponse(
+          errorCode,
+          errorMessage
+      );
+      return new ResponseEntity<>(
+          errorResponse,
+          HttpStatus.FORBIDDEN
+      );
     }
+
+    if (message.startsWith(CONFLICT_PREFIX)) {
+      ErrorResponse errorResponse = new ErrorResponse(
+          "CATEGORY_NOT_EMPTY",
+          message.substring(CONFLICT_PREFIX.length())
+      );
+      return new ResponseEntity<>(
+          errorResponse,
+          HttpStatus.CONFLICT
+      );
+    }
+
     // その他のIllegalStateExceptionは汎用的な400エラーとして返す
-    ErrorResponse errorResponse = new ErrorResponse("BAD_REQUEST", MSG_BAD_REQUEST);
-    return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST); // 400
+    ErrorResponse errorResponse = new ErrorResponse(
+        "BAD_REQUEST",
+        MSG_BAD_REQUEST
+    );
+    return new ResponseEntity<>(
+        errorResponse,
+        HttpStatus.BAD_REQUEST
+    ); // 400
   }
 
   // 500 Internal Server Error: 予期せぬエラー全般をハンドリング
   @ExceptionHandler(Exception.class)
   public ResponseEntity<ErrorResponse> handleAllUncaughtException(Exception e) {
-    ErrorResponse errorResponse = new ErrorResponse("INTERNAL_SERVER_ERROR",
-        MSG_INTERNAL_SERVER_ERROR);
-    // 本番環境ではここで詳細なエラーログを出力することが重要
-    return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+    ErrorResponse errorResponse = new ErrorResponse(
+        "INTERNAL_SERVER_ERROR",
+        MSG_INTERNAL_SERVER_ERROR
+    );
+    return new ResponseEntity<>(
+        errorResponse,
+        HttpStatus.INTERNAL_SERVER_ERROR
+    );
   }
 }

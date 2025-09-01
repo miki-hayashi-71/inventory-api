@@ -37,7 +37,13 @@ public class Item {
 
   private LocalDateTime created;
 
-  public Item(Integer categoryId, String userId, String name, Integer quantity, Boolean deleted) {
+  public Item(
+      Integer categoryId,
+      String userId,
+      String name,
+      Integer quantity,
+      Boolean deleted
+  ) {
     this.categoryId = categoryId;
     this.userId = userId;
     this.name = name;

@@ -1,6 +1,7 @@
 package com.example.inventory_api.domain.repository;
 
 import com.example.inventory_api.domain.model.Item;
+import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -8,19 +9,16 @@ import org.springframework.data.repository.query.Param;
 public interface ItemRepository extends JpaRepository<Item, Integer> {
 
   /**
-   * 指定されたカテゴリIDに紐づく、未削除のアイテムが存在するかどうかを判定します。
+   * 指定されたカテゴリIDに紐づく、未削除のアイテムのリストを取得します。
    *
    * @param categoryId カテゴリID
-   * @return アイテムが存在する場合は true, 存在しない場合は false
+   * @return 条件に一致するアイテムのリスト
    */
   @Query(value = """
-      SELECT EXISTS (
-          SELECT 1
-          FROM items
-          WHERE category_id = :categoryId
-          AND deleted = false
-      )
+      SELECT *
+      FROM items
+      WHERE category_id = :categoryId
+      AND deleted = false
       """, nativeQuery = true)
-  boolean existsItems(@Param("categoryId") Integer categoryId);
-
+  List<Item> undeletedItems(@Param("categoryId") Integer categoryId);
 }
