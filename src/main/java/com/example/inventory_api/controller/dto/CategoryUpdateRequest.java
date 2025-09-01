@@ -8,8 +8,8 @@ import lombok.Data;
 @Data
 public class CategoryUpdateRequest {
 
-    @Pattern(regexp = ".*[^\\s　].*", message = "カテゴリ名は必須です")
-    @NotBlank(message = "カテゴリ名は必須です")
-    @Size(max = 50, message = "カテゴリ名は50文字以内で入力してください")
-    private String name;
+  @Pattern(regexp = ".*[^\\s　].*", message = "カテゴリ名は必須です")
+  @NotBlank(message = "カテゴリ名は必須です")
+  @Size(max = 50, message = "カテゴリ名は50文字以内で入力してください")
+  private String name;
 }

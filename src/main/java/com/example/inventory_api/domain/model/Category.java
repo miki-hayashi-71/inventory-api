@@ -1,6 +1,10 @@
 package com.example.inventory_api.domain.model;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -12,23 +16,23 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class Category {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Integer id;
 
-    private String userId;
+  private String userId;
 
-    private String name;
+  private String name;
 
-    private Boolean deleted;
+  private Boolean deleted;
 
-    public Category(
-            String userId,
-            String name,
-            Boolean deleted
-    ) {
-        this.userId = userId;
-        this.name = name;
-        this.deleted = deleted;
-    }
+  public Category(
+      String userId,
+      String name,
+      Boolean deleted
+  ) {
+    this.userId = userId;
+    this.name = name;
+    this.deleted = deleted;
+  }
 }

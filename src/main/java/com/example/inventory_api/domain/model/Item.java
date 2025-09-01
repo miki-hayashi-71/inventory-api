@@ -1,11 +1,14 @@
 package com.example.inventory_api.domain.model;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalDateTime;
 
 @Data
 @Entity
@@ -13,31 +16,32 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Item {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
 
-    private Integer categoryId;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Integer id;
 
-    private String userId;
+  private Integer categoryId;
 
-    private String name;
+  private String userId;
 
-    private Integer quantity;
+  private String name;
 
-    private Integer price;
+  private Integer quantity;
 
-    private String place;
+  private Integer price;
 
-    private Boolean deleted;
+  private String place;
 
-    private LocalDateTime created;
+  private Boolean deleted;
 
-    public Item(Integer categoryId, String userId, String name, Integer quantity, Boolean deleted) {
-        this.categoryId = categoryId;
-        this.userId = userId;
-        this.name = name;
-        this.quantity = quantity;
-        this.deleted = deleted;
-    }
+  private LocalDateTime created;
+
+  public Item(Integer categoryId, String userId, String name, Integer quantity, Boolean deleted) {
+    this.categoryId = categoryId;
+    this.userId = userId;
+    this.name = name;
+    this.quantity = quantity;
+    this.deleted = deleted;
+  }
 }
