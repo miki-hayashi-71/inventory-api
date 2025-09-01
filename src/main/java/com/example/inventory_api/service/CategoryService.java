@@ -8,14 +8,13 @@ import com.example.inventory_api.domain.repository.CategoryRepository;
 import com.ibm.icu.text.Collator;
 import com.ibm.icu.util.ULocale;
 import jakarta.transaction.Transactional;
+import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
-
-import java.util.Comparator;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor

@@ -1,13 +1,12 @@
 package com.example.inventory_api.domain.repository;
 
+import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
+
 import com.example.inventory_api.domain.model.Category;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-
-import java.util.List;
-
-import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 
 @DataJpaTest
 public class CategoryRepositoryTest {
