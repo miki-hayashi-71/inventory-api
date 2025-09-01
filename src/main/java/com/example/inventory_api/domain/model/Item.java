@@ -9,24 +9,25 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "items")
 public class Item {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
 
-    private Integer categoryId;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Integer id;
 
-    private String userId;
+  private Integer categoryId;
 
-    private String name;
+  private String userId;
 
-    private Integer quantity;
+  private String name;
 
-    private Integer price;
+  private Integer quantity;
 
-    private String place;
+  private Integer price;
 
-    private Boolean deleted;
+  private String place;
 
-    private LocalDateTime created;
+  private Boolean deleted;
+
+  private LocalDateTime created;
 
 }

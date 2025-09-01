@@ -17,48 +17,45 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CategoryController {
 
-    private final CategoryService categoryService;
+  private final CategoryService categoryService;
 
-    /**
-     * 新しいカスタムカテゴリを1件登録するAPI
-     * POST /categories
-     */
-    @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public CategoryResponse createCategory(@RequestBody @Validated CategoryCreateRequest request) {
-        // TODO: 認証機能実装後、実際のuserIdに置き換える
-        String currentUserId = "user1";
+  /**
+   * 新しいカスタムカテゴリを1件登録するAPI POST /categories
+   */
+  @PostMapping
+  @ResponseStatus(HttpStatus.CREATED)
+  public CategoryResponse createCategory(@RequestBody @Validated CategoryCreateRequest request) {
+    // TODO: 認証機能実装後、実際のuserIdに置き換える
+    String currentUserId = "user1";
 
-        Category createdCategory = categoryService.createCategory(request, currentUserId);
+    Category createdCategory = categoryService.createCategory(request, currentUserId);
 
-        return new CategoryResponse(createdCategory);
-    }
+    return new CategoryResponse(createdCategory);
+  }
 
-    /**
-     * カテゴリ一覧を取得するAPI
-     * GET /categories
-     */
-    @GetMapping
-    public List<CategoryResponse> getCategoryList() {
-        //  TODO:認証機能実装後、実際のuserIdに置き換える
-        String currentUserId = "user1";
+  /**
+   * カテゴリ一覧を取得するAPI GET /categories
+   */
+  @GetMapping
+  public List<CategoryResponse> getCategoryList() {
+    //  TODO:認証機能実装後、実際のuserIdに置き換える
+    String currentUserId = "user1";
 
-        // serviceからResponseのリストを受け取って返す
-        return categoryService.getCategoryList(currentUserId);
-    }
+    // serviceからResponseのリストを受け取って返す
+    return categoryService.getCategoryList(currentUserId);
+  }
 
-    /**
-     * カスタムカテゴリを1件更新するAPI
-     * PATCH /categories/{categoryId}
-     */
-    @PatchMapping("/{categoryId}")
-    public CategoryResponse updateCategory(@PathVariable Integer categoryId,
-                                           @RequestBody @Validated CategoryUpdateRequest request) {
-        // TODO: 認証機能実装後、実際のuserIdに置き換える
-        String currentUserId = "user1";
+  /**
+   * カスタムカテゴリを1件更新するAPI PATCH /categories/{categoryId}
+   */
+  @PatchMapping("/{categoryId}")
+  public CategoryResponse updateCategory(@PathVariable Integer categoryId,
+      @RequestBody @Validated CategoryUpdateRequest request) {
+    // TODO: 認証機能実装後、実際のuserIdに置き換える
+    String currentUserId = "user1";
 
-        Category updatedCategory = categoryService.updateCategory(categoryId, request, currentUserId);
+    Category updatedCategory = categoryService.updateCategory(categoryId, request, currentUserId);
 
-        return new CategoryResponse(updatedCategory);
-    }
+    return new CategoryResponse(updatedCategory);
+  }
 }
