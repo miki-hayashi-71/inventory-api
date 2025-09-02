@@ -1,6 +1,9 @@
 package com.example.inventory_api.controller.advice;
 
 import com.example.inventory_api.controller.dto.ErrorResponse;
+import java.util.Locale;
+import lombok.RequiredArgsConstructor;
+import org.springframework.context.MessageSource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -11,7 +14,10 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.NoHandlerFoundException;
 
 @RestControllerAdvice // 全ての@RestControllerに対する共通処理を担うクラスであることを宣言
+@RequiredArgsConstructor
 public class CustomExceptionHandler {
+
+  private final MessageSource messageSource;
 
   // Service層で定義するエラーメッセージの接頭辞
   private static final String DUPLICATE_PREFIX = "DUPLICATE:";
@@ -48,7 +54,7 @@ public class CustomExceptionHandler {
     if (fieldError == null) {
       ErrorResponse errorResponse = new ErrorResponse(
           "VALIDATION_ERROR",
-          MSG_VALIDATION_ERROR
+          getMessage("error.badRequest")
       );
       return new ResponseEntity<>(
           errorResponse,
@@ -61,9 +67,9 @@ public class CustomExceptionHandler {
 
     // エラーメッセージの内容に応じて、API仕様書のエラーコードを判定
     if (errorMessage != null) {
-      if (errorMessage.contains(PARTIAL_MSG_REQUIRED)) {
+      if (errorMessage.contains(getMessage("validation.required"))) {
         errorCode = "CATEGORY_NAME_REQUIRED";
-      } else if (errorMessage.contains(PARTIAL_MSG_TOO_LONG)) {
+      } else if (errorMessage.contains(getMessage("validation.tooLong"))) {
         errorCode = "CATEGORY_NAME_TOO_LONG";
       } else {
         errorCode = "VALIDATION_ERROR";
@@ -86,10 +92,10 @@ public class CustomExceptionHandler {
   ) {
     String message = e.getMessage();
 
-    if (message.startsWith(DUPLICATE_PREFIX)) {
+    if (message.startsWith(getMessage("prefix.duplicate"))) {
       ErrorResponse errorResponse = new ErrorResponse(
           "CATEGORY_NAME_DUPLICATE",
-          message.substring(DUPLICATE_PREFIX.length())
+          message.substring(getMessage("prefix.duplicate").length())
       );
       return new ResponseEntity<>(
           errorResponse, HttpStatus.CONFLICT); // 409
@@ -161,5 +167,19 @@ public class CustomExceptionHandler {
         errorResponse,
         HttpStatus.INTERNAL_SERVER_ERROR
     );
+  }
+
+  /**
+   * messages.propertiesからメッセージを取得する (引数なし)
+   */
+  private String getMessage(String code) {
+    return messageSource.getMessage(code, null, Locale.JAPAN);
+  }
+
+  /**
+   * messages.propertiesからメッセージを取得する (引数あり)
+   */
+  private String getMessage(String code, Object... args) {
+    return messageSource.getMessage(code, args, Locale.JAPAN);
   }
 }

@@ -19,6 +19,8 @@ spring:
   web:
     resources:
       add-mappings: false
+  messages:
+    basename: messages
 springdoc:
   swagger-ui:
     path: /swagger-ui.html

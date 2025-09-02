@@ -20,5 +20,5 @@ public interface ItemRepository extends JpaRepository<Item, Integer> {
       WHERE category_id = :categoryId
       AND deleted = false
       """, nativeQuery = true)
-  List<Item> undeletedItems(@Param("categoryId") Integer categoryId);
+  List<Item> findExistingItems(@Param("categoryId") Integer categoryId);
 }

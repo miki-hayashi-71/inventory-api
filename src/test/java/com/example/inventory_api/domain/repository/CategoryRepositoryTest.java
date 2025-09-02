@@ -30,7 +30,7 @@ public class CategoryRepositoryTest {
     categoryRepository.save(testCategory);
 
     // Act
-    Optional<Category> result = categoryRepository.duplicateCheck("テストカテゴリ", testUserId);
+    Optional<Category> result = categoryRepository.findExistingCategories("テストカテゴリ", testUserId);
 
     // Assert
     assertThat(result).isPresent(); // Optionalが空でないことを確認
@@ -44,7 +44,7 @@ public class CategoryRepositoryTest {
     categoryRepository.save(deletedCategory);
 
     // Act
-    Optional<Category> result = categoryRepository.duplicateCheck("テストカテゴリ", testUserId);
+    Optional<Category> result = categoryRepository.findExistingCategories("テストカテゴリ", testUserId);
 
     // Assert
     assertThat(result).isEmpty();

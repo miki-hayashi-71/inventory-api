@@ -12,9 +12,11 @@ import com.ibm.icu.util.ULocale;
 import jakarta.transaction.Transactional;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.MessageSource;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
@@ -24,6 +26,7 @@ public class CategoryService {
 
   private final CategoryRepository categoryRepository;
   private final ItemRepository itemRepository;
+  private final MessageSource messageSource;
 
   // @Valueアノテーションでプロパティファイルから値を読み込む
   @Value("${app.custom-category.max-limit}")
@@ -31,18 +34,6 @@ public class CategoryService {
 
   // システムユーザー（仮）
   private static final String SYSTEM_USER_ID = "system";
-
-  // --エラーメッセージを定数で管理--
-  // TODO: メッセージ用のプロパティファイルを用意したい（https://github.com/miki-hayashi-71/inventory-api/pull/18#discussion_r2299559046）
-  private static final String MSG_DUPLICATE = "DUPLICATE:そのカテゴリ名は既に使用されています";
-  private static final String MSG_LIMIT = "LIMIT:登録できるカテゴリの上限に達しています";
-  private static final String MSG_NOT_FOUND = "NOT_FOUND:該当のカテゴリが見つかりません";
-  private static final String MSG_FORBIDDEN = "FORBIDDEN:このカテゴリを操作する権限がありません";
-  private static final String MSG_FORBIDDEN_DEFAULT = "FORBIDDEN:デフォルトカテゴリは操作できません";
-  private static final String MSG_NOT_EMPTY = "CONFLICT:アイテムが1件以上登録されているカテゴリは削除できません";
-  private static final String MSG_EXISTING_ITEMS = "以下のアイテムが登録されています: ";
-  private static final String MSG_DB_ACCESS_ERROR = "データベースへのアクセスに失敗しました";
-  private static final String MSG_UNEXPECTED_ERROR = "予期せぬエラーが発生しました";
 
   /**
    * 新しいカスタムカテゴリを1件登録 createCategory
@@ -64,7 +55,9 @@ public class CategoryService {
           .filter(category -> userId.equals(category.getUserId()))
           .count();
       if (userCategoryCount >= maxCustomCategoryLimit) {
-        throw new IllegalStateException(MSG_LIMIT);
+        throw new IllegalStateException(
+            getMessage("prefix.limit") + getMessage("category.limit")
+        );
       }
 
       // 新しいカテゴリを作成して保存
@@ -74,11 +67,11 @@ public class CategoryService {
     } catch (IllegalStateException e) {
       throw e;
     } catch (DataAccessException e) {
-      throw new RuntimeException(MSG_DB_ACCESS_ERROR, e);
+      throw new RuntimeException(getMessage("db.accessError"), e);
     } catch (NullPointerException | IllegalArgumentException e) {  // TODO: 例外パターンを追加する
-      throw new RuntimeException(MSG_UNEXPECTED_ERROR, e);
+      throw new RuntimeException(getMessage("error.unexpected"), e);
     } catch (Exception e) {
-      throw new RuntimeException(MSG_UNEXPECTED_ERROR, e);
+      throw new RuntimeException(getMessage("error.unexpected"), e);
     }
   }
 
@@ -99,9 +92,9 @@ public class CategoryService {
           .collect(Collectors.toList());
 
     } catch (DataAccessException e) {
-      throw new RuntimeException(MSG_DB_ACCESS_ERROR, e);
+      throw new RuntimeException(getMessage("db.accessError"), e);
     } catch (Exception e) {
-      throw new RuntimeException(MSG_UNEXPECTED_ERROR, e);
+      throw new RuntimeException(getMessage("error.unexpected"), e);
     }
   }
 
@@ -124,7 +117,9 @@ public class CategoryService {
       Category categoryToUpdate = categories.stream()
           .filter(category -> category.getId().equals(categoryId))
           .findFirst()
-          .orElseThrow(() -> new IllegalStateException(MSG_NOT_FOUND));
+          .orElseThrow(() -> new IllegalStateException(
+              getMessage("prefix.notFound") + getMessage("category.notFound")
+          ));
 
       // 権限チェック
       validateCategoryPermission(categoryToUpdate, userId);
@@ -135,11 +130,11 @@ public class CategoryService {
     } catch (IllegalStateException e) {
       throw e;
     } catch (DataAccessException e) {
-      throw new RuntimeException(MSG_DB_ACCESS_ERROR, e);
+      throw new RuntimeException(getMessage("db.accessError"), e);
     } catch (NullPointerException e) {  // TODO: 例外パターンを追加する
-      throw new RuntimeException(MSG_UNEXPECTED_ERROR, e);
+      throw new RuntimeException(getMessage("error.unexpected"), e);
     } catch (Exception e) {
-      throw new RuntimeException(MSG_UNEXPECTED_ERROR, e);
+      throw new RuntimeException(getMessage("error.unexpected"), e);
     }
   }
 
@@ -152,15 +147,21 @@ public class CategoryService {
       String userId
   ) {
     try {
-      // IDでカテゴリを直接検索
-      Category categoryToDelete = categoryRepository.findById(categoryId)
-          .orElseThrow(() -> new IllegalStateException(MSG_NOT_FOUND));
+      List<Category> categories = categoryRepository.findUserCategories(userId, SYSTEM_USER_ID);
+
+      // 削除対象の検索
+      Category categoryToDelete = categories.stream()
+          .filter(category -> category.getId().equals(categoryId))
+          .findFirst()
+          .orElseThrow(() -> new IllegalStateException(
+              getMessage("prefix.notFound") + getMessage("category.notFound")
+          ));
 
       // 権限チェック
       validateCategoryPermission(categoryToDelete, userId);
 
       // カテゴリに紐づく未削除のアイテムを取得
-      List<Item> items = itemRepository.undeletedItems(categoryId);
+      List<Item> items = itemRepository.findExistingItems(categoryId);
 
       // アイテムが存在する場合、エラーメッセージにアイテム名を追記して例外をスロー
       if (!items.isEmpty()) {
@@ -168,8 +169,9 @@ public class CategoryService {
             .map(Item::getName)
             .collect(Collectors.joining(", "));
         // 定数を組み合わせてエラーメッセージを生成
-        String errorMessage = MSG_NOT_EMPTY + MSG_EXISTING_ITEMS + itemNames;
-        throw new IllegalStateException(errorMessage);
+        String errorMessage = getMessage("category.notEmpty")
+                              + getMessage("category.existingItems", itemNames);
+        throw new IllegalStateException(getMessage("prefix.conflict") + errorMessage);
       }
 
       // 論理削除
@@ -179,11 +181,11 @@ public class CategoryService {
     } catch (IllegalStateException e) {
       throw e;
     } catch (DataAccessException e) {
-      throw new RuntimeException(MSG_DB_ACCESS_ERROR, e);
+      throw new RuntimeException(getMessage("db.accessError"), e);
     } catch (NullPointerException e) {  // TODO: 例外パターンを追加する
-      throw new RuntimeException(MSG_UNEXPECTED_ERROR, e);
+      throw new RuntimeException(getMessage("error.unexpected"), e);
     } catch (Exception e) {
-      throw new RuntimeException(MSG_UNEXPECTED_ERROR, e);
+      throw new RuntimeException(getMessage("error.unexpected"), e);
     }
   }
 
@@ -204,7 +206,9 @@ public class CategoryService {
         .anyMatch(category -> category.getName().equals(newName));
 
     if (isDuplicate) {
-      throw new IllegalStateException(MSG_DUPLICATE);
+      throw new IllegalStateException(
+          getMessage("prefix.duplicate") + getMessage("category.duplicate")
+      );
     }
   }
 
@@ -217,11 +221,29 @@ public class CategoryService {
   private void validateCategoryPermission(Category category, String userId) {
     // デフォルトカテゴリは操作不可
     if (SYSTEM_USER_ID.equals(category.getUserId())) {
-      throw new IllegalStateException(MSG_FORBIDDEN_DEFAULT);
+      throw new IllegalStateException(
+          getMessage("prefix.forbidden") + getMessage("category.forbidden.default")
+      );
     }
     // 他人のカテゴリは操作不可
     if (!userId.equals(category.getUserId())) {
-      throw new IllegalStateException(MSG_FORBIDDEN);
+      throw new IllegalStateException(
+          getMessage("prefix.forbidden") + getMessage("category.forbidden")
+      );
     }
+  }
+
+  /**
+   * messages.propertiesからメッセージを取得する (引数なし)
+   */
+  private String getMessage(String code) {
+    return messageSource.getMessage(code, null, Locale.JAPAN);
+  }
+
+  /**
+   * messages.propertiesからメッセージを取得する (引数あり)
+   */
+  private String getMessage(String code, Object... args) {
+    return messageSource.getMessage(code, args, Locale.JAPAN);
   }
 }

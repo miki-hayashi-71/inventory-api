@@ -24,7 +24,7 @@ public interface CategoryRepository extends JpaRepository<Category, Integer> {
       AND user_id = :userId
       AND deleted = false
       """, nativeQuery = true)
-  Optional<Category> duplicateCheck(
+  Optional<Category> findExistingCategories(
       @Param("name") String name,
       @Param("userId") String userId
   );
