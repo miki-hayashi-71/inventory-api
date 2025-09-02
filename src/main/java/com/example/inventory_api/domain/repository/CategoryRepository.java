@@ -1,11 +1,11 @@
 package com.example.inventory_api.domain.repository;
 
 import com.example.inventory_api.domain.model.Category;
+import java.util.List;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-
-import java.util.List;
 
 // Categoryエンティティとやり取りを行うリポジトリ（インターフェース）
 public interface CategoryRepository extends JpaRepository<Category, Integer> {
@@ -17,8 +17,17 @@ public interface CategoryRepository extends JpaRepository<Category, Integer> {
    * @param userId ユーザーID
    * @return 条件に一致するカテゴリのリスト
    */
-  // TODO: SQLでの取得に変更したい
-  List<Category> findByNameAndUserIdAndDeletedFalse(String name, String userId);
+  @Query(value = """
+      SELECT *
+      FROM categories
+      WHERE name = :name
+      AND user_id = :userId
+      AND deleted = false
+      """, nativeQuery = true)
+  Optional<Category> findExistingCategories(
+      @Param("name") String name,
+      @Param("userId") String userId
+  );
 
   /**
    * ログインユーザーのカスタムカテゴリと、システムのデフォルトカテゴリの一覧を取得

@@ -1,13 +1,20 @@
 package com.example.inventory_api.domain.model;
 
-import jakarta.persistence.*;
-import lombok.Data;
-
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import java.time.LocalDateTime;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @Entity
 @Table(name = "items")
+@NoArgsConstructor
+@AllArgsConstructor
 public class Item {
 
   @Id
@@ -30,4 +37,17 @@ public class Item {
 
   private LocalDateTime created;
 
+  public Item(
+      Integer categoryId,
+      String userId,
+      String name,
+      Integer quantity,
+      Boolean deleted
+  ) {
+    this.categoryId = categoryId;
+    this.userId = userId;
+    this.name = name;
+    this.quantity = quantity;
+    this.deleted = deleted;
+  }
 }

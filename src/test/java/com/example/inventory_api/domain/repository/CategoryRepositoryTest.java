@@ -1,13 +1,13 @@
 package com.example.inventory_api.domain.repository;
 
+import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
+
 import com.example.inventory_api.domain.model.Category;
+import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-
-import java.util.List;
-
-import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 
 @DataJpaTest
 public class CategoryRepositoryTest {
@@ -21,38 +21,30 @@ public class CategoryRepositoryTest {
   private final String systemUserId = "system";
 
   /**
-   * findByNameAndUserIdAndDeletedFalse のテスト
+   * duplicateCheck のテスト
    */
   @Test
-  void findByNameAndUserIdAndDeletedFalse_未削除のカテゴリが存在する場合_そのカテゴリを返す() {
+  void duplicateCheck_未削除のカテゴリが存在する場合_そのカテゴリを含むOptionalを返す() {
     // Arrange
-    Category testCategory = new Category();
-    testCategory.setName("テストカテゴリ");
-    testCategory.setUserId(testUserId);
-    testCategory.setDeleted(false);  // 削除されていない
+    Category testCategory = new Category(testUserId, "テストカテゴリ", false);
     categoryRepository.save(testCategory);
 
     // Act
-    List<Category> result = categoryRepository.findByNameAndUserIdAndDeletedFalse("テストカテゴリ",
-        testUserId);
+    Optional<Category> result = categoryRepository.findExistingCategories("テストカテゴリ", testUserId);
 
     // Assert
-    assertThat(result).hasSize(1);
-    assertThat(result.get(0).getName()).isEqualTo("テストカテゴリ");
+    assertThat(result).isPresent(); // Optionalが空でないことを確認
+    assertThat(result.get().getName()).isEqualTo("テストカテゴリ");
   }
 
   @Test
-  void findByNameAndUserIdAndDeletedFalse_削除済みのカテゴリしか存在しない場合_空のリストを返す() {
+  void duplicateCheck_削除済みのカテゴリしか存在しない場合_空のOptionalを返す() {
     // Arrange
-    Category deletedCategory = new Category();
-    deletedCategory.setName("テストカテゴリ");
-    deletedCategory.setUserId(testUserId);
-    deletedCategory.setDeleted(true); // 削除済み
+    Category deletedCategory = new Category(testUserId, "テストカテゴリ", true);
     categoryRepository.save(deletedCategory);
 
     // Act
-    List<Category> result = categoryRepository.findByNameAndUserIdAndDeletedFalse("テストカテゴリ",
-        testUserId);
+    Optional<Category> result = categoryRepository.findExistingCategories("テストカテゴリ", testUserId);
 
     // Assert
     assertThat(result).isEmpty();
